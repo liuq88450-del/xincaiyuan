@@ -8,7 +8,7 @@ let BAIDU_API_KEY = 'cl2hmepmhQ5S4K0d1Kor76dN';     // 百度AI API Key
 let BAIDU_SECRET_KEY = 'kxmUEp4l342Kg1urGWCfvTLMXEhPbxWP';  // 百度AI Secret Key
 
 // 千帆大模型Key（新版Bearer Token方式，ERNIE-5.1）
-let QIANFAN_API_KEY = 'bce-v3/ALTAK-67HYNjrmcb3c@ma1RXf0s/d899537a1843bff2ce22b29d9146054501a9c4a0';
+var QIANFAN_API_KEY = process.env.QIANFAN_API_KEY || 'no-key-configured';
 
 // 也支持从环境变量读取
 if(process.env.BAIDU_API_KEY) BAIDU_API_KEY = process.env.BAIDU_API_KEY;
