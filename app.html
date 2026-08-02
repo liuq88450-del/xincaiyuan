@@ -1,0 +1,3782 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>芯菜园 - AI Agent版 v3</title>
+<style>
+:root{
+  --green:#2E7D32;--green2:#66BB6A;--mint:#E8F5E9;--mint2:#F8FCF8;
+  --amber:#FF8F00;--blue:#2F7DB8;--ink:#1a2e1a;--muted:#6B7B6B;
+  --line:#E0E8E1;--paper:#fff;--danger:#b85a45;
+  --bg1:#f5fbf1;--bg2:#ffffff;--bg3:#e7f3e2;
+  --bubble-ai:#ffffff;--bubble-user:#dcf4dd;
+  --shadow:0 2px 12px rgba(46,125,50,.08);
+  --shadow-lg:0 8px 32px rgba(46,125,50,.12);
+  --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB",sans-serif;
+  background:var(--bg3);color:var(--ink);font-size:15px;line-height:1.5;
+  display:flex;justify-content:center;
+}
+button,input,textarea,select{font:inherit;border:0;outline:0}
+button{cursor:pointer}
+
+/* ====== Phone Frame ====== */
+.phone{
+  width:100%;max-width:430px;height:100vh;height:100dvh;
+  background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg3) 100%);
+  display:flex;flex-direction:column;position:relative;overflow:hidden;
+}
+@media(min-width:431px){
+  .phone{border-radius:24px;box-shadow:var(--shadow-lg);margin:20px 0;height:calc(100vh - 40px)}
+}
+
+/* ====== Header ====== */
+.header{
+  padding:12px 16px 10px;background:rgba(255,255,255,.95);
+  backdrop-filter:blur(16px);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  z-index:10;flex-shrink:0;
+}
+.brand{display:flex;align-items:center;gap:8px}
+.logo{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  color:#fff;display:grid;place-items:center;font-weight:800;font-size:16px;
+  box-shadow:0 2px 8px rgba(46,125,50,.3);
+}
+.brand-text h1{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.brand-text .sub{font-size:11px;color:var(--muted);margin-top:1px}
+.header-status{
+  display:flex;align-items:center;gap:5px;
+  background:var(--mint);border:1px solid #C8E6C9;border-radius:999px;
+  padding:5px 10px;font-size:11px;color:var(--green);font-weight:600;
+}
+.dot-live{
+  width:7px;height:7px;border-radius:50%;background:var(--green2);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ====== View System ====== */
+.view{flex:1;overflow-y:auto;display:none;flex-direction:column;-webkit-overflow-scrolling:touch}
+.view.active{display:flex}
+
+/* ====== Chat View ====== */
+.chat{
+  flex:1;overflow-y:auto;padding:16px 14px 8px;
+  display:flex;flex-direction:column;gap:14px;
+  scroll-behavior:smooth;-webkit-overflow-scrolling:touch;
+}
+.msg{display:flex;gap:8px;max-width:88%;animation:slideUp .3s ease}
+.msg.ai{align-self:flex-start}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.avatar{
+  width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800;
+}
+.msg.user .avatar{background:linear-gradient(135deg,#78909c,#546e7a)}
+.bubble{
+  padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.55;
+  word-break:break-word;box-shadow:var(--shadow);
+}
+.msg.ai .bubble{background:var(--bubble-ai);border:1px solid var(--line);border-top-left-radius:4px}
+.msg.user .bubble{background:var(--bubble-user);border-top-right-radius:4px}
+.typing{display:flex;gap:4px;padding:4px 0}
+.typing span{
+  width:7px;height:7px;border-radius:50%;background:var(--green2);
+  animation:typing 1.4s infinite;
+}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes typing{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+
+.quick-row{display:flex;flex-wrap:wrap;gap:7px;padding:0 4px}
+.quick-btn{
+  background:#fff;border:1px solid var(--line);border-radius:999px;
+  padding:8px 14px;font-size:13px;color:var(--ink);font-weight:500;
+  display:flex;align-items:center;gap:5px;transition:.2s;box-shadow:var(--shadow);
+}
+.quick-btn:active{transform:scale(.95)}
+.quick-btn .ico{font-size:15px}
+.quick-btn.hot{border-color:var(--amber);background:#fff8e1;color:var(--amber)}
+.quick-btn.green{border-color:var(--green);background:var(--mint);color:var(--green)}
+.quick-btn.danger{border-color:var(--danger);color:var(--danger)}
+.quick-btn.blue{border-color:var(--blue);background:#e3f2fd;color:var(--blue)}
+
+.card-msg{
+  background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:14px;box-shadow:var(--shadow);max-width:88%;align-self:flex-start;
+  animation:slideUp .3s ease;
+}
+.card-title{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.card-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f5f0;font-size:13px}
+.card-row:last-child{border:0}
+.card-row .val{font-weight:600;color:var(--green)}
+.card-row .val.red{color:var(--danger)}
+.card-row .val.amber{color:var(--amber)}
+
+/* Device card */
+.dev-card{
+  background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:14px;margin-top:8px;box-shadow:var(--shadow);
+}
+.dev-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.dev-name{font-size:15px;font-weight:700}
+.dev-price{font-size:16px;font-weight:800;color:var(--green)}
+.dev-old-price{font-size:12px;color:var(--muted);text-decoration:line-through;margin-left:4px}
+.dev-desc{font-size:12px;color:var(--muted);margin-bottom:8px}
+.dev-tags{display:flex;gap:5px;flex-wrap:wrap}
+.dev-tag{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--mint);color:var(--green);font-weight:500}
+.dev-tag.amber{background:#fff8e1;color:var(--amber)}
+.dev-img-wrap{
+  width:100%;border-radius:10px;margin-bottom:10px;
+  overflow:hidden;position:relative;background:#f9fcf7;
+}
+.dev-img-wrap img{width:100%;height:220px;object-fit:contain;display:block}
+.dev-img-badge{
+  position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;
+  font-size:11px;padding:2px 8px;border-radius:6px;
+}
+.dev-gallery{display:flex;gap:6px;margin:8px 0;overflow-x:auto;padding-bottom:4px}
+.dev-gallery-item{flex-shrink:0;width:90px;height:90px;border-radius:8px;overflow:hidden;cursor:pointer;background:#f9fcf7}
+.dev-gallery-item img{width:100%;height:100%;object-fit:contain}
+.dev-specs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.dev-spec{background:#f9fcf7;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:11px}
+.dev-spec b{display:block;font-size:12px;color:var(--green)}
+.dev-detail-toggle{font-size:12px;color:var(--blue);margin-top:6px;cursor:pointer}
+.dev-detail-body{display:none;margin-top:8px;font-size:12px;color:var(--muted);line-height:1.6}
+.dev-detail-body.show{display:block}
+.dev-detail-body p{margin-bottom:4px}
+.dev-detail-body b{color:var(--ink)}
+.dev-detail-row{
+  display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f0f5f0;font-size:12px;line-height:1.5;
+}
+.dev-detail-row:last-child{border:0}
+.dev-detail-row b{flex-shrink:0;width:75px;color:var(--ink)}
+.dev-detail-row span{color:var(--muted)}
+
+/* Compare table */
+.compare-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.compare-table th{background:var(--mint);padding:6px 8px;text-align:left;font-weight:600;color:var(--green)}
+.compare-table td{padding:6px 8px;border-bottom:1px solid #f0f5f0}
+.compare-table .highlight{color:var(--green);font-weight:600}
+
+/* Compare cards (三方对比) */
+.compare-cards{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.compare-card-item{
+  background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;
+}
+.compare-card-item.water{border-color:var(--green);background:var(--mint)}
+.compare-card-item strong{display:block;font-size:13px;margin-bottom:4px}
+.compare-card-item.water strong{color:var(--green)}
+.compare-card-item span{font-size:12px;color:var(--muted);line-height:1.5}
+
+.content-result{
+  background:#fffbe6;border:1px solid #f0d38a;border-radius:12px;
+  padding:12px;margin-top:8px;font-size:13px;line-height:1.6;
+}
+.content-result .label{font-size:11px;color:var(--amber);font-weight:700;margin-bottom:4px}
+.content-result .copy-btn{
+  margin-top:8px;background:var(--amber);color:#fff;border-radius:8px;
+  padding:6px 14px;font-size:12px;font-weight:600;
+}
+
+/* ====== Input Bar ====== */
+.input-bar{
+  padding:8px 12px 10px;background:rgba(255,255,255,.95);
+  backdrop-filter:blur(16px);border-top:1px solid var(--line);
+  display:flex;gap:8px;align-items:flex-end;flex-shrink:0;
+}
+.input-wrap{flex:1;position:relative}
+.input-bar textarea{
+  width:100%;min-height:38px;max-height:100px;resize:none;
+  padding:9px 36px 9px 12px;border:1px solid var(--line);border-radius:12px;
+  font-size:14px;background:var(--mint2);color:var(--ink);
+}
+.send-btn{
+  width:38px;height:38px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;
+  display:grid;place-items:center;font-size:18px;transition:.2s;
+}
+.send-btn:active{transform:scale(.9)}
+.cam-btn{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  width:28px;height:28px;border-radius:8px;background:transparent;
+  display:grid;place-items:center;font-size:18px;color:var(--muted);
+}
+
+/* ====== Bottom Nav (4 tabs) ====== */
+.bottom-nav{
+  display:flex;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);padding:4px 0 6px;flex-shrink:0;
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 0;font-size:10px;color:var(--muted);font-weight:500;
+  background:none;border:0;
+}
+.nav-item.active{color:var(--green)}
+.nav-item .ico{font-size:18px}
+
+/* ====== Status banner ====== */
+.status-banner{
+  margin:0 14px 8px;padding:10px 14px;border-radius:12px;
+  background:linear-gradient(135deg,#E8F5E9,#ffffff);border:1px solid #C8E6C9;
+  display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;
+  justify-content:space-between;
+}
+.status-banner .icon{font-size:20px;flex-shrink:0}
+.status-banner .banner-text{flex:1;min-width:0}
+.status-banner strong{color:var(--green)}
+.status-banner .arrow{font-size:20px;color:var(--green);flex-shrink:0}
+
+/* ====== Garden View ====== */
+.garden-view{padding:14px;gap:12px}
+.garden-stats{
+  display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;
+  background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:14px 10px;box-shadow:var(--shadow);
+}
+.stat-item{text-align:center}
+.stat-num{font-size:22px;font-weight:800;color:var(--green)}
+.stat-num.amber{color:var(--amber)}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:2px}
+
+.crop-card{
+  background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:14px;box-shadow:var(--shadow);
+}
+.crop-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.crop-name{font-size:16px;font-weight:700}
+.crop-status{font-size:12px;padding:3px 10px;border-radius:6px;font-weight:600}
+.crop-status.growing{background:var(--mint);color:var(--green)}
+.crop-status.ready{background:#fff8e1;color:var(--amber)}
+.crop-status.sprout{background:#e3f2fd;color:var(--blue)}
+.crop-meta{font-size:12px;color:var(--muted);margin-bottom:8px}
+.crop-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.crop-actions .quick-btn{padding:6px 10px;font-size:12px}
+
+.crop-timeline{
+  display:flex;gap:4px;margin-top:8px;overflow-x:auto;padding-bottom:4px;
+}
+.tl-dot{
+  flex-shrink:0;width:60px;text-align:center;
+}
+.tl-dot-day{font-size:10px;color:var(--muted);margin-bottom:2px}
+.tl-dot-bar{height:6px;border-radius:3px;background:#e0e0e0;margin:0 8px}
+.tl-dot-bar.done{background:var(--green2)}
+.tl-dot-bar.current{background:var(--green)}
+.tl-dot-label{font-size:9px;color:var(--muted);margin-top:2px}
+
+.add-crop-btn{
+  width:100%;padding:14px;border:2px dashed var(--green2);border-radius:14px;
+  background:var(--mint2);color:var(--green);font-size:14px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.add-crop-btn:active{background:var(--mint)}
+
+.achievement-box{
+  background:linear-gradient(135deg,#fff8e1,#fff);border:1px solid #f0d38a;
+  border-radius:14px;padding:14px;
+}
+.achievement-title{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--amber)}
+.achievement-list{font-size:12px;color:var(--muted);line-height:1.8}
+.achievement-list .done{color:var(--green)}
+.achievement-list .lock{color:#bbb}
+
+/* ====== Shop View ====== */
+.shop-view{padding:14px;gap:12px}
+.shop-banner{
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  border-radius:14px;padding:16px;color:#fff;text-align:center;
+}
+.shop-banner h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.shop-banner p{font-size:12px;opacity:.9}
+
+/* Compare banner in shop */
+.compare-banner{
+  background:linear-gradient(135deg,#fff8e1,#fff);border:1px solid #f0d38a;
+  border-radius:14px;padding:14px;cursor:pointer;
+}
+.compare-banner-title{font-size:14px;font-weight:700;color:var(--amber);margin-bottom:4px}
+.compare-banner-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+.shop-filter{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.shop-filter-btn{
+  flex-shrink:0;padding:6px 14px;border-radius:999px;
+  background:#fff;border:1px solid var(--line);font-size:12px;font-weight:500;
+  white-space:nowrap;
+}
+.shop-filter-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* ====== Mine View ====== */
+.mine-view{padding:14px;gap:12px}
+.mine-profile{
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  border-radius:14px;padding:16px;color:#fff;
+}
+.mine-profile-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.mine-avatar{
+  width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.25);
+  display:grid;place-items:center;font-size:24px;
+}
+.mine-profile-info h2{font-size:18px;font-weight:700}
+.mine-profile-info p{font-size:12px;opacity:.85;margin-top:2px}
+.mine-profile-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.mine-stat{background:rgba(255,255,255,.15);border-radius:10px;padding:8px;text-align:center}
+.mine-stat strong{display:block;font-size:18px;font-weight:800}
+.mine-stat span{font-size:10px;opacity:.85}
+
+/* Health archive */
+.health-archive{
+  background:#fff;border:1px solid #C8E6C9;border-radius:14px;padding:14px;box-shadow:var(--shadow);
+}
+.health-archive-title{
+  font-size:14px;font-weight:700;color:var(--green);margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;
+}
+.zero-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.zero-item{
+  background:var(--mint);border-radius:10px;padding:10px;text-align:center;
+}
+.zero-item .zero-name{font-size:16px;font-weight:800;color:var(--green)}
+.zero-item .zero-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.3}
+.health-score-box{
+  margin-top:10px;padding:12px;background:linear-gradient(135deg,#fff8e1,#fff);
+  border:1px solid #f0d38a;border-radius:10px;text-align:center;
+}
+.health-score-box .score{font-size:28px;font-weight:800;color:var(--amber)}
+.health-score-box .lbl{font-size:11px;color:var(--muted)}
+
+/* Mine sections */
+.mine-section{
+  background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:14px;box-shadow:var(--shadow);
+}
+.mine-section-head{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;
+}
+.mine-section-head h3{font-size:14px;font-weight:700}
+.mine-section-head .note{font-size:11px;color:var(--muted)}
+
+.order-icons{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.order-icon{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:8px 4px;border-radius:10px;background:var(--mint2);
+  position:relative;
+}
+.order-icon b{font-size:16px}
+.order-icon span{font-size:10px;color:var(--muted)}
+.order-badge{
+  position:absolute;top:2px;right:2px;
+  background:#F44336;color:#fff;font-size:10px;font-style:normal;
+  min-width:16px;height:16px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:0 4px;
+}
+
+.order-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.order-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.order-card-no{font-size:11px;color:var(--muted)}
+.order-card-status{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px}
+.order-card-body{display:flex;gap:10px;align-items:center}
+.order-card-body img{width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.order-card-img-ph{width:60px;height:60px;border-radius:8px;background:var(--mint);display:grid;place-items:center;font-size:20px;font-weight:700;color:var(--green);flex-shrink:0}
+.order-card-info{display:flex;flex-direction:column;gap:2px;flex:1}
+.order-card-info strong{font-size:14px}
+.order-card-info span{font-size:12px;color:var(--muted)}
+.order-card-actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+.order-action-btn{padding:6px 14px;border-radius:999px;font-size:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.order-action-btn.hot{background:var(--green);color:#fff;border-color:var(--green)}
+
+.mine-tool-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+.mine-tool{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 4px;border-radius:10px;background:var(--mint2);cursor:pointer;
+}
+.mine-tool b{font-size:14px}
+.mine-tool span{font-size:10px;color:var(--muted)}
+
+.mine-list-item{
+  display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid #f0f5f0;
+}
+.mine-list-item:last-child{border:0}
+.mine-list-item .info{flex:1}
+.mine-list-item .info strong{font-size:13px;display:block}
+.mine-list-item .info span{font-size:11px;color:var(--muted)}
+.mine-list-item .arrow{color:var(--muted);font-size:14px}
+
+/* ====== Form (Add Crop) ====== */
+.form-group{margin-bottom:14px}
+.form-label{font-size:13px;font-weight:600;margin-bottom:6px;display:block}
+.form-input,.form-select{
+  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+  font-size:14px;background:var(--mint2);
+}
+.form-input:focus,.form-select:focus{border-color:var(--green)}
+.crop-options{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.crop-option{
+  padding:10px 6px;border:1px solid var(--line);border-radius:10px;
+  text-align:center;font-size:12px;background:#fff;cursor:pointer;
+}
+.crop-option.selected{border-color:var(--green);background:var(--mint);color:var(--green);font-weight:600}
+.crop-option .emoji{font-size:20px;display:block;margin-bottom:2px}
+
+/* Crop mode toggle */
+.crop-mode-toggle{display:flex;gap:0;border-radius:10px;overflow:hidden;margin-bottom:12px}
+.crop-mode-btn{
+  flex:1;padding:10px;font-size:13px;font-weight:600;background:#f0f5f0;color:var(--muted);
+}
+.crop-mode-btn.active{background:var(--green);color:#fff}
+
+/* ====== Overlay ====== */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;
+  display:none;align-items:flex-end;justify-content:center;
+}
+.overlay.show{display:flex;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.sheet{
+  width:100%;max-width:430px;background:#fff;border-radius:20px 20px 0 0;
+  max-height:85vh;overflow-y:auto;padding:20px 16px 30px;position:relative;
+  animation:slideUp .3s ease;
+}
+.sheet-handle{width:36px;height:4px;border-radius:2px;background:#ccc;margin:0 auto 16px}
+.sheet h2{font-size:18px;font-weight:700;margin-bottom:12px}
+.sheet-back{
+  position:absolute;top:16px;left:16px;
+  display:flex;align-items:center;gap:2px;
+  font-size:14px;color:var(--green);font-weight:600;background:none;z-index:1;
+}
+.sheet-close{
+  position:absolute;top:16px;right:16px;width:30px;height:30px;
+  border-radius:50%;background:#f5f5f5;display:grid;place-items:center;
+  font-size:18px;color:var(--muted);z-index:1;
+}
+.sheet-title{text-align:center;font-size:17px;font-weight:700;margin-bottom:14px}
+
+/* Image viewer */
+.image-viewer{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;
+  display:none;align-items:center;justify-content:center;
+}
+.image-viewer.show{display:flex}
+.image-viewer img{max-width:90%;max-height:80vh;border-radius:12px}
+.image-viewer-close{
+  position:absolute;top:16px;right:16px;width:36px;height:36px;
+  border-radius:50%;background:rgba(255,255,255,.2);color:#fff;
+  display:grid;place-items:center;font-size:20px;
+}
+.image-viewer-caption{
+  position:absolute;bottom:30px;left:0;right:0;text-align:center;
+  color:#fff;font-size:14px;
+}
+
+/* Camera overlay */
+.cam-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;
+}
+.cam-overlay.show{display:flex}
+.cam-preview-img{
+  max-width:90%;max-height:50vh;border-radius:12px;margin-bottom:16px;
+}
+.cam-result{
+  width:100%;max-width:380px;background:#fff;border-radius:16px;padding:16px;
+  max-height:40vh;overflow-y:auto;
+}
+
+/* Daily log */
+.log-entry{
+  background:#f9fcf7;border:1px solid var(--line);border-radius:10px;
+  padding:10px;margin-bottom:8px;
+}
+.log-entry-head{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:4px;
+}
+.log-entry-day{font-size:12px;font-weight:700;color:var(--green)}
+.log-entry-date{font-size:11px;color:var(--muted)}
+.log-entry-text{font-size:13px;color:var(--ink);line-height:1.5}
+.log-entry-photo{width:100%;border-radius:8px;margin-top:6px;max-height:200px;object-fit:cover}
+
+/* Purchase panel */
+.purchase-summary{
+  display:flex;gap:12px;align-items:center;margin-bottom:16px;
+  padding:12px;background:#f9fcf7;border-radius:12px;
+}
+.purchase-summary img{width:80px;height:80px;border-radius:10px;object-fit:contain;background:#fff}
+.purchase-summary .info{flex:1}
+.purchase-summary .info strong{font-size:15px;display:block}
+.purchase-summary .info .price{font-size:18px;font-weight:800;color:var(--green)}
+.purchase-summary .info .old{font-size:12px;color:var(--muted);text-decoration:line-through}
+.purchase-price-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px;background:var(--mint);border-radius:10px;margin-bottom:12px;
+}
+.purchase-price-row .lbl{font-size:13px;color:var(--muted)}
+.purchase-price-row .val{font-size:22px;font-weight:800;color:var(--green)}
+
+/* Cost calculator */
+.cost-result{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.cost-box{background:#f9fcf7;border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+.cost-box .num{font-size:22px;font-weight:800;color:var(--green)}
+.cost-box .num.red{color:var(--danger)}
+.cost-box .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.cost-summary{margin-top:10px;padding:10px;background:#fff8e1;border:1px solid #f0d38a;border-radius:10px;font-size:13px;text-align:center}
+.cost-summary strong{color:var(--amber);font-size:16px}
+
+/* Supply calc */
+.supply-calc-result{
+  margin-top:10px;padding:12px;background:#f9fcf7;border:1px solid var(--line);
+  border-radius:10px;font-size:13px;line-height:1.6;color:var(--muted);
+}
+.supply-calc-result b{color:var(--green)}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.8);color:#fff;padding:8px 16px;border-radius:8px;
+  font-size:13px;z-index:300;white-space:nowrap;
+}
+
+/* Crop search & category */
+.crop-search-input{
+  width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;
+  font-size:14px;background:#f8f9f8;box-sizing:border-box;margin-bottom:10px;
+}
+.crop-search-input:focus{border-color:var(--green);background:#fff;outline:none}
+.crop-cat-row{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.crop-cat-btn{
+  padding:5px 12px;border-radius:20px;border:1.5px solid #e0e0e0;
+  background:#fff;font-size:12px;color:var(--muted);cursor:pointer;
+}
+.crop-cat-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+.crop-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  max-height:200px;overflow-y:auto;margin-bottom:10px;
+}
+.crop-grid-item{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 4px;border-radius:10px;background:#f5f8f5;
+  cursor:pointer;transition:.15s;border:1.5px solid transparent;
+}
+.crop-grid-item:active{background:#e8f5e9;border-color:var(--green)}
+.crop-grid-item .emoji{font-size:24px}
+.crop-grid-item .name{font-size:11px;color:var(--text)}
+.crop-grid-item .days{font-size:9px;color:var(--muted)}
+
+/* Voice input */
+.input-toggle{
+  width:36px;height:38px;border-radius:10px;flex-shrink:0;
+  background:#f0f5f0;color:var(--muted);
+  display:grid;place-items:center;font-size:18px;transition:.2s;
+}
+.input-toggle.active{background:var(--mint);color:var(--green)}
+.voice-btn{
+  flex:1;min-height:38px;border-radius:12px;
+  background:var(--mint2);border:1px solid var(--line);
+  font-size:14px;color:var(--ink);font-weight:500;
+  display:flex;align-items:center;justify-content:center;transition:.2s;
+  user-select:none;-webkit-user-select:none;
+}
+.voice-btn.recording{
+  background:var(--mint);border-color:var(--green);
+  color:var(--green);font-weight:600;
+}
+.voice-tip{
+  position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.8);color:#fff;padding:10px 20px;border-radius:12px;
+  font-size:13px;z-index:300;white-space:nowrap;display:none;
+}
+.voice-tip.show{display:block}
+
+/* Photo source sheet */
+.photo-source-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:600;
+  background:var(--mint2);border:1px solid var(--line);color:var(--ink);
+}
+.photo-source-btn.green{background:var(--mint);border-color:var(--green);color:var(--green)}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- ====== Header ====== -->
+  <div class="header">
+    <div class="brand">
+      <div class="logo">芯</div>
+      <div class="brand-text">
+        <h1>芯菜园</h1>
+        <div class="sub">AI管家 · 小芯</div>
+      </div>
+    </div>
+    <div class="header-status" id="headerStatus" onclick="switchView('chat')">
+      <div class="dot-live"></div>
+      <span>菜园托管中</span>
+    </div>
+  </div>
+
+  <!-- ====== Chat View ====== -->
+  <div class="view active" id="view-chat">
+    <div class="status-banner" id="statusBanner" onclick="switchView('garden')">
+      <span class="icon">🌿</span>
+      <div class="banner-text">
+        <strong id="bannerTitle">点击"我的菜园"添加你的菜品</strong>
+        <div style="font-size:11px;color:var(--muted)" id="bannerSub">AI会自动跟踪生长进度</div>
+      </div>
+      <span class="arrow">›</span>
+    </div>
+    <div class="chat" id="chat"></div>
+    <div class="quick-row" id="quickRow">
+      <button class="quick-btn hot" onclick="userAction('pick')"><span class="ico">🤖</span>AI帮选设备</button>
+      <button class="quick-btn" onclick="userAction('care')"><span class="ico">💧</span>今天该做啥</button>
+      <button class="quick-btn" onclick="userAction('content')"><span class="ico">✍️</span>帮我写文案</button>
+      <button class="quick-btn" onclick="userAction('cost')"><span class="ico">📊</span>种菜vs买菜</button>
+      <button class="quick-btn" onclick="userAction('compare')"><span class="ico">🔍</span>水培vs土培</button>
+    </div>
+    <div class="input-bar">
+      <button class="input-toggle" id="voiceToggle" onclick="toggleVoiceMode()">🎤</button>
+      <div class="input-wrap" id="textInputWrap">
+        <textarea id="input" placeholder="问小芯任何种菜问题…" rows="1" oninput="onInput(this)" onkeydown="onKey(event)"></textarea>
+        <button class="cam-btn" onclick="takePhoto()">📷</button>
+      </div>
+      <button class="voice-btn" id="voiceInputBtn" style="display:none" ontouchstart="startVoice(event)" ontouchend="stopVoice(event)" onmousedown="startVoice(event)" onmouseup="stopVoice(event)" onmouseleave="stopVoice(event)">按住说话</button>
+      <button class="send-btn" id="sendBtn" onclick="sendInput()">↑</button>
+    </div>
+  </div>
+
+  <!-- ====== Garden View ====== -->
+  <div class="view" id="view-garden">
+    <div class="garden-view" style="display:flex;flex-direction:column">
+      <div class="garden-stats">
+        <div class="stat-item"><div class="stat-num" id="gardenDays">0</div><div class="stat-lbl">种植天数</div></div>
+        <div class="stat-item"><div class="stat-num" id="gardenHarvest">0</div><div class="stat-lbl">采收次数</div></div>
+        <div class="stat-item"><div class="stat-num amber" id="gardenSaved">¥0</div><div class="stat-lbl">省下买菜钱</div></div>
+        <div class="stat-item"><div class="stat-num" id="gardenScore">0</div><div class="stat-lbl">健康分</div></div>
+      </div>
+      <div id="cropList" style="display:flex;flex-direction:column;gap:10px"></div>
+      <button class="add-crop-btn" onclick="openAddCrop()">➕ 添加新菜品</button>
+      <button class="add-crop-btn" onclick="showCalendar()" style="background:var(--mint);color:var(--green);border:1px solid var(--green2)">📅 查看种植日历</button>
+      <div class="achievement-box">
+        <div class="achievement-title">🏆 种植成就</div>
+        <div class="achievement-list" id="achievementList"></div>
+      </div>
+      <div style="padding:12px;background:var(--mint);border-radius:12px;font-size:12px;color:var(--muted);line-height:1.6">
+        💡 <b style="color:var(--green)">AI Agent托管中</b><br>
+        小芯正在为你管理菜园，每天自动提醒该做什么。<br>
+        添加菜品后，AI会根据种植日期自动计算生长进度。
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Shop View ====== -->
+  <div class="view" id="view-shop">
+    <div class="shop-view" style="display:flex;flex-direction:column">
+      <div class="shop-banner">
+        <h2>🛒 设备商城</h2>
+        <p>5款设备 · 从入门到旗舰 · 0农残水培</p>
+      </div>
+      <div class="compare-banner" onclick="openComparePanel()">
+        <div class="compare-banner-title">📊 外购 / 土培 / 无土水培 三方对比</div>
+        <div class="compare-banner-desc">买之前先看看：哪种方式更适合你家？点击展开对比 →</div>
+      </div>
+      <div class="shop-filter">
+        <button class="shop-filter-btn active" onclick="filterShop('all',this)">全部</button>
+        <button class="shop-filter-btn" onclick="filterShop('newbie',this)">新手入门</button>
+        <button class="shop-filter-btn" onclick="filterShop('family',this)">家庭循环</button>
+        <button class="shop-filter-btn" onclick="filterShop('pro',this)">每日采收</button>
+        <button class="shop-filter-btn" onclick="filterShop('flagship',this)">旗舰大容量</button>
+        <button class="shop-filter-btn" onclick="filterShop('lifestyle',this)">花草香草</button>
+      </div>
+      <div id="shopList" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+  </div>
+
+  <!-- ====== Mine View ====== -->
+  <div class="view" id="view-mine">
+    <div class="mine-view" style="display:flex;flex-direction:column">
+      <!-- Profile -->
+      <div class="mine-profile">
+        <div class="mine-profile-top">
+          <div class="mine-avatar">🧑‍🌾</div>
+          <div class="mine-profile-info">
+            <h2 id="mineName">芯菜园用户</h2>
+            <p id="mineSub">设备、订单、补给、健康档案都在这里</p>
+          </div>
+        </div>
+        <div class="mine-profile-stats">
+          <div class="mine-stat"><strong id="mineDevices">0台</strong><span>已绑定设备</span></div>
+          <div class="mine-stat"><strong id="mineCrops">0种</strong><span>在种菜品</span></div>
+          <div class="mine-stat"><strong id="mineScore">0</strong><span>健康分</span></div>
+        </div>
+      </div>
+
+      <!-- Health Archive -->
+      <div class="health-archive">
+        <div class="health-archive-title">🏥 健康档案 · 数智农业5个0</div>
+        <div class="zero-grid">
+          <div class="zero-item"><div class="zero-name">0农残</div><div class="zero-desc">0农药0化肥残留</div></div>
+          <div class="zero-item"><div class="zero-name">0激素</div><div class="zero-desc">不使用植物激素</div></div>
+          <div class="zero-item"><div class="zero-name">0催熟</div><div class="zero-desc">到该摘的时候再摘</div></div>
+          <div class="zero-item"><div class="zero-name">0重金属</div><div class="zero-desc">重金属降低98%</div></div>
+        </div>
+        <div class="zero-item" style="margin-top:8px"><div class="zero-name">0污染</div><div class="zero-desc">室内种植，隔绝外部污染源</div></div>
+        <div class="health-score-box">
+          <div class="score" id="healthScore">88</div>
+          <div class="lbl">家庭健康分 / 100</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">0农残、无土现摘、过程可记录、按需采摘</div>
+        </div>
+      </div>
+
+      <!-- Data Stats -->
+      <div class="mine-section">
+        <div class="mine-section-head">
+          <h3>📊 种植统计</h3>
+          <span class="note" onclick="showStatsPanel()" style="cursor:pointer;color:var(--green)">详细 →</span>
+        </div>
+        <div id="statsSummary" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+      </div>
+
+      <!-- My Devices -->
+      <div class="mine-section">
+        <div class="mine-section-head">
+          <h3>📦 我的设备</h3>
+          <span class="note" onclick="switchView('shop')" style="cursor:pointer;color:var(--green)">去商城 →</span>
+        </div>
+        <div id="mineDeviceList">
+          <div style="font-size:13px;color:var(--muted);padding:8px 0">还没有绑定设备，去商城选一台吧</div>
+        </div>
+      </div>
+
+      <!-- My Orders -->
+      <div class="mine-section">
+        <div class="mine-section-head">
+          <h3>🛍️ 我的订单</h3>
+          <span class="note" onclick="showOrderList('all')" style="cursor:pointer;color:var(--green)">查看全部 →</span>
+        </div>
+        <div class="order-icons">
+          <button class="order-icon" onclick="showOrderList('pending')"><b>¥</b><span>待付款</span><i id="badge-pending" class="order-badge" style="display:none">0</i></button>
+          <button class="order-icon" onclick="showOrderList('paid')"><b>□</b><span>待发货</span><i id="badge-paid" class="order-badge" style="display:none">0</i></button>
+          <button class="order-icon" onclick="showOrderList('shipped')"><b>→</b><span>待收货</span><i id="badge-shipped" class="order-badge" style="display:none">0</i></button>
+          <button class="order-icon" onclick="showOrderList('done')"><b>✓</b><span>已完成</span><i id="badge-done" class="order-badge" style="display:none">0</i></button>
+        </div>
+        <div id="recentOrders" style="margin-top:10px"></div>
+      </div>
+
+      <!-- Supply Repurchase -->
+      <div class="mine-section">
+        <div class="mine-section-head">
+          <h3>💧 补给复购</h3>
+          <span class="note">按设备和种植天数算</span>
+        </div>
+        <div class="form-group" style="margin-bottom:8px">
+          <select class="form-select" id="supplyDevice" onchange="calcSupply()">
+            <option value="S">S系列 - 13口/5L</option>
+            <option value="D">D系列 - 44口/10L</option>
+            <option value="T">T系列 - 66口/10L</option>
+            <option value="F">F系列 - 四层/48L</option>
+            <option value="M">M系列 - 1口/5L</option>
+          </select>
+        </div>
+        <div class="supply-calc-result" id="supplyResult">选择设备后，AI按水箱容量和种植天数计算A/B液和耗材复购建议。</div>
+      </div>
+
+      <!-- Tools -->
+      <div class="mine-section">
+        <div class="mine-section-head">
+          <h3>⚙️ 菜单栏</h3>
+        </div>
+        <div class="mine-tool-grid">
+          <button class="mine-tool" onclick="showAllDailyLogs()"><b>📖</b><span>种植日记</span></button>
+          <button class="mine-tool" onclick="showAddressPanel()"><b>📍</b><span>收货地址</span></button>
+          <button class="mine-tool" onclick="showCouponPanel()"><b>🎫</b><span>优惠券</span></button>
+          <button class="mine-tool" onclick="showServicePanel()"><b>💬</b><span>联系客服</span></button>
+        </div>
+      </div>
+
+      <!-- Recommend -->
+      <div class="mine-section">
+        <div class="mine-section-head">
+          <h3>🎁 推荐给朋友</h3>
+          <span class="note">推荐越多，补给越省</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="mine-stat" style="background:var(--mint2)"><strong>10</strong><span>推荐积分</span></div>
+          <div class="mine-stat" style="background:var(--mint2)"><strong>¥5</strong><span>可抵补给</span></div>
+          <div class="mine-stat" style="background:var(--mint2)"><strong>1人</strong><span>邀请记录</span></div>
+        </div>
+        <button class="quick-btn hot" onclick="showSharePanel()" style="width:100%;justify-content:center;padding:10px">🔗 生成推荐码</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Bottom Nav (4 tabs) ====== -->
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="switchView('chat')" data-view="chat"><span class="ico">💬</span>对话</button>
+    <button class="nav-item" onclick="switchView('garden')" data-view="garden"><span class="ico">🌱</span>我的菜园</button>
+    <button class="nav-item" onclick="switchView('shop')" data-view="shop"><span class="ico">🛒</span>设备商城</button>
+    <button class="nav-item" onclick="switchView('mine')" data-view="mine"><span class="ico">👤</span>我的</button>
+  </div>
+</div>
+
+<!-- ====== Overlay Panel ====== -->
+<div class="overlay" id="overlay" onclick="closePanel(event)">
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-back" onclick="closeOverlay()">← 返回</button>
+    <button class="sheet-close" onclick="closeOverlay()">×</button>
+    <div id="sheetContent"></div>
+  </div>
+</div>
+
+<!-- ====== Image Viewer ====== -->
+<div class="image-viewer" id="imageViewer" onclick="closeImageViewer(event)">
+  <button class="image-viewer-close" onclick="closeImageViewer()">×</button>
+  <img id="imageViewerImg" src="" alt="产品大图">
+  <div class="image-viewer-caption" id="imageViewerCaption"></div>
+</div>
+
+<!-- ====== Camera Overlay ====== -->
+<div class="cam-overlay" id="camOverlay">
+  <button class="sheet-back" onclick="closeCamOverlay()" style="position:absolute;top:16px;left:16px;color:#fff">← 返回</button>
+  <button class="image-viewer-close" onclick="closeCamOverlay()" style="z-index:1">×</button>
+  <img class="cam-preview-img" id="camPreviewImg" src="" alt="拍照预览">
+  <div class="cam-result" id="camResult"></div>
+</div>
+
+<!-- ====== Hidden File Input ====== -->
+<input type="file" accept="image/*" capture="environment" id="cameraInput" style="display:none" onchange="onPhotoSelected(this)">
+<input type="file" accept="image/*" id="albumInput" style="display:none" onchange="onPhotoSelected(this)">
+
+<!-- ====== Voice Tip ====== -->
+<div class="voice-tip" id="voiceTip">🎤 正在聆听...松开发送</div>
+
+<script>
+// ====== Config ======
+var imgBase = "assets/products/";
+
+// ====== Knowledge Base ======
+var KB = {
+  devices: [
+    {code:'M',name:'M 系列花盆款',price:198,old:258,ports:1,tank:5,
+     emoji:'🪴',image:imgBase+'mini/1_01.jpg',imageLabel:'M实拍',
+     gallery:[
+       {src:imgBase+'mini/1_01.jpg',label:'M系列桌面花盆款'},
+       {src:imgBase+'mini/1_03.jpg',label:'适合花草/香草小体验'},
+       {src:imgBase+'mini/1_05.jpg',label:'小空间摆放参考'}
+     ],
+     desc:'1个种植口，5L水箱。适合花卉、多肉、小型香草。',
+     tags:['1口','5L','种花'],cat:'lifestyle',
+     fit:'办公桌、窗台、小空间，适合先种花或小型香草。',
+     avoid:'不适合一家多口长期叶菜供给。',
+     grow:'花卉、香草、小型叶菜。',
+     supply:'M型先装满基质，播种深0.5-1cm；不套用大设备水培流程。',
+     spec:'12V/1500mA，17W，尺寸18.4x17.5x19.9cm，约836g。',
+     packageList:'灯板、伸缩杆、种植篮、水箱、水位窗、注水口等。',
+     control:'8/12/16小时日照模式，L/M/H亮度模式。',
+     shipping:'18台/箱，外箱46x34.5x50.5cm，整箱16.5kg。'
+    },
+    {code:'S',name:'S 系列单机款',price:498,old:598,ports:13,tank:5,
+     emoji:'🌱',image:imgBase+'s/1_01.jpg',imageLabel:'S实拍',
+     gallery:[
+       {src:imgBase+'s/1_01.jpg',label:'S系列13口新手款'},
+       {src:imgBase+'s/1_02.jpg',label:'灯光/水箱结构展示'},
+       {src:imgBase+'s/1_05.jpg',label:'叶菜种植场景参考'}
+     ],
+     desc:'13个种植口，5L水箱。适合黑心乌、生菜、上海青等叶菜，新手反馈最快。',
+     tags:['13口','5L','新手首推'],cat:'newbie',
+     fit:'第一次家庭无土水培、预算500左右、想先看到成果的用户。',
+     avoid:'想完全满足多人长期大量吃菜的家庭。',
+     grow:'黑心乌、生菜、上海青、油麦菜等叶菜。',
+     supply:'发芽前清水；出叶后按标准配比A5+B5ml/L，5L水=A25+B25。',
+     spec:'输入12V/2A，ABS材质，尺寸35x20x17-52cm。',
+     packageList:'适配器、13个种植篮、13个种植棉块、镊子、贴纸、育苗罩、孔盖、遮光贴纸、注水口盖、出水口盖。',
+     control:'水泵30分钟开/30分钟停；蔬菜/花果模式默认16小时光照。',
+     shipping:'1层款，4台/箱，外箱50.5x40x42.5cm，整箱10.4kg。'
+    },
+    {code:'D',name:'D 系列44口家庭循环款',price:998,old:1280,ports:44,tank:10,
+     emoji:'🥬',image:imgBase+'dt/1_01.jpg',imageLabel:'D实拍',
+     gallery:[
+       {src:imgBase+'dt/1_01.jpg',label:'D系列44口二层款'},
+       {src:imgBase+'dt/1_03.jpg',label:'多品种家庭补充'},
+       {src:imgBase+'dt/1_06.jpg',label:'双层结构细节'}
+     ],
+     desc:'44个种植口，10L水箱。适合家里经常吃一点叶菜，开始做错峰循环。',
+     tags:['44口','10L','家庭循环'],cat:'family',
+     fit:'想比13口多种一些，做到一批发芽、一批长叶、一批采摘的家庭。',
+     avoid:'只想低成本体验一次的新手。',
+     grow:'冰草、羽衣甘蓝、奶油生菜、茼蒿等。',
+     supply:'双层边吃边长款，发芽/三叶/移栽阶段按浓度提醒。',
+     spec:'输入24V/3A，整机功率53W，尺寸51.5x31.6x17.8-135.5cm。',
+     packageList:'灯板、操作面板、伸缩杆、水箱、种植面板、种植篮/模块、水泵、适配器、轮子等。',
+     control:'蔬菜/花果模式16小时或22小时光照，水泵按循环运行。',
+     shipping:'2层款，1台/箱，外箱55x37x44cm，8.8kg。'
+    },
+    {code:'T',name:'T 系列66口每日采收款',price:1680,old:1980,ports:66,tank:10,
+     emoji:'🌾',image:imgBase+'dt/2_09.jpg',imageLabel:'T实拍',
+     gallery:[
+       {src:imgBase+'dt/2_09.jpg',label:'T系列66口三层款'},
+       {src:imgBase+'dt/2_01.jpg',label:'更接近家庭循环'},
+       {src:imgBase+'dt/2_04.jpg',label:'多层水培展示'}
+     ],
+     desc:'66个种植口，10L水箱。适合错峰种植，尽量做到每天现摘一点。',
+     tags:['66口','每日采收','错峰种植'],cat:'pro',
+     fit:'一家三口/四口想持续吃叶菜，适合按批次安排发芽、生长和采摘。',
+     avoid:'没有固定摆放空间、只想试一下的人。',
+     grow:'多品类叶菜轮作，适合做30天后连续采收。',
+     supply:'多层口数更适合连续采收，按日期记录播种和补给。',
+     spec:'输入24V/3.75A，整机功率80W，尺寸51.5x31.6x17.8-173.5cm。',
+     packageList:'多层水箱、灯板、种植面板、供水管、水泵、适配器、轮子、育苗配件等。',
+     control:'蔬菜/花果模式16小时或22小时光照，水泵按循环运行。',
+     shipping:'3层款，1台/箱，外箱55x37x65cm，12.9kg。'
+    },
+    {code:'F',name:'F 系列四层大容量立体菜园',price:2980,old:3680,ports:120,tank:48,
+     emoji:'🏡',image:imgBase+'f/3_01.jpg',imageLabel:'F实拍',
+     gallery:[
+       {src:imgBase+'f/3_01.jpg',label:'F系列四层大容量款'},
+       {src:imgBase+'f/2_01.jpg',label:'花果/草莓展示型'},
+       {src:imgBase+'f/1_01.jpg',label:'四层大容量结构'}
+     ],
+     desc:'四层大容量，120个种植口，48L水箱。适合家庭长期补给、餐饮民宿展示和大空间种植。',
+     tags:['四层','120口','48L','大容量'],cat:'flagship',
+     fit:'想要更强展示效果、更大种植量，或餐饮/民宿做现摘展示。',
+     avoid:'空间有限、只想先试一盆叶菜的新手。',
+     grow:'多品类叶菜、花草、草莓等，适合长期观察和展示。',
+     supply:'大容量水箱和多层结构，适合长期陪伴和耗材复购。',
+     spec:'四层结构，含缺水报警器等。',
+     packageList:'灯板、操作面板、顶部支架、供水管、铝杆、水管、水箱、适配器、水泵、缺水报警器、种植篮/块、育苗罩、遮光贴纸等。',
+     control:'第2-4层与第一层控制面板分开；水泵运行30分钟、关闭30分钟。',
+     shipping:'4层款，1台/箱，外箱96x29x54cm，22kg。'
+    }
+  ],
+  zeroFive: [
+    {name:'0农残',desc:'无土室内种植，0农药0化肥残留，检测报告可查'},
+    {name:'0激素',desc:'不使用任何植物激素，自然生长'},
+    {name:'0催熟',desc:'不催熟，到该摘的时候再摘'},
+    {name:'0重金属',desc:'重金属降低98%，远超土培标准'},
+    {name:'0污染',desc:'室内种植，隔绝外部污染源'}
+  ],
+  compare: {
+    points:[
+      ['农药残留','0检出 ✅','常有残留 ⚠️'],
+      ['重金属','降低98% ✅','土壤不可控 ⚠️'],
+      ['用水量','循环用水省90% ✅','大量浇水 ❌'],
+      ['虫害问题','室内无虫 ✅','常有虫害 ⚠️'],
+      ['生长速度','快30-50% ✅','正常 ❌'],
+      ['维生素C','提升100% ✅','正常 ❌'],
+      ['是否洗泥巴','不用洗 ✅','要洗半天 ❌'],
+      ['种植位置','厨房/客厅/阳台 ✅','需要土地/花盆 ⚠️']
+    ],
+    threeWay: [
+      {type:'water',title:'家庭无土水培',desc:'优点是无土、0农残、过程可记录、按需现摘、适合室内叶菜；缺点是需要设备、种子质量和补水补液记录。'},
+      {type:'soil',title:'自己土培',desc:'优点是有参与感、适合户外和花果；缺点是占地、泥土、虫害、浇水施肥、病菌环境和季节影响更明显。'},
+      {type:'buy',title:'外购蔬菜',desc:'优点是方便、品类多、马上能买；缺点是运输、保存、来源、抽检风险和农残情况需要自己判断。'}
+    ]
+  },
+  crops:[
+    {name:'奶油生菜',emoji:'🥬',days:25,season:'四季',difficulty:'简单'},
+    {name:'羽衣甘蓝',emoji:'🥗',days:35,season:'四季',difficulty:'简单'},
+    {name:'冰菜',emoji:'🧊',days:30,season:'春秋',difficulty:'中等'},
+    {name:'上海青',emoji:'🥬',days:20,season:'四季',difficulty:'简单'},
+    {name:'茼蒿',emoji:'🌿',days:25,season:'春秋',difficulty:'简单'},
+    {name:'黑心乌',emoji:'🥬',days:28,season:'四季',difficulty:'简单'},
+    {name:'草莓',emoji:'🍓',days:60,season:'秋冬',difficulty:'中等'},
+    {name:'罗勒',emoji:'🌿',days:40,season:'四季',difficulty:'简单'},
+    {name:'空心菜',emoji:'🥬',days:25,season:'夏',difficulty:'简单'},
+    {name:'小番茄',emoji:'🍅',days:70,season:'春夏',difficulty:'中等'},
+    {name:'紫苏',emoji:'🌿',days:40,season:'四季',difficulty:'简单'},
+    {name:'薄荷',emoji:'🌿',days:60,season:'四季',difficulty:'简单'},
+    {name:'韭菜',emoji:'🥬',days:80,season:'四季',difficulty:'中等'},
+    {name:'芹菜',emoji:'🥬',days:60,season:'春秋',difficulty:'中等'},
+    {name:'菠菜',emoji:'🥬',days:30,season:'春秋',difficulty:'简单'},
+    {name:'小葱',emoji:'🌿',days:20,season:'四季',difficulty:'简单'},
+    {name:'苋菜',emoji:'🥬',days:30,season:'夏',difficulty:'简单'},
+    {name:'茴香',emoji:'🌿',days:50,season:'春秋',difficulty:'中等'},
+    {name:'油麦菜',emoji:'🥬',days:25,season:'四季',difficulty:'简单'},
+    {name:'穿心莲',emoji:'🌿',days:30,season:'四季',difficulty:'简单'},
+    {name:'秋葵',emoji:'🌿',days:55,season:'夏',difficulty:'中等'},
+    {name:'辣椒',emoji:'🌶️',days:75,season:'春夏',difficulty:'中等'},
+    {name:'苦菊',emoji:'🥬',days:30,season:'春秋',difficulty:'简单'},
+    {name:'紫生菜',emoji:'🥬',days:28,season:'四季',difficulty:'简单'},
+    {name:'香菜',emoji:'🌿',days:35,season:'春秋',difficulty:'简单'}
+  ],
+  // 手填时自动匹配生长周期
+  cropDayMap:{
+    '生菜':25,'奶油生菜':25,'紫生菜':28,'油麦菜':25,'上海青':20,
+    '黑心乌':28,'羽衣甘蓝':35,'冰菜':30,'茼蒿':25,'空心菜':25,
+    '菠菜':30,'韭菜':80,'芹菜':60,'苋菜':30,'苦菊':30,'香菜':35,
+    '小葱':20,'大葱':90,'紫苏':40,'薄荷':60,'罗勒':40,'茴香':50,
+    '穿心莲':30,'秋葵':55,'草莓':60,'小番茄':70,'番茄':75,
+    '辣椒':75,'彩椒':80,'黄瓜':50,'豆角':60,'西瓜':80,
+    '甜瓜':65,'蓝莓':365,'花卉':60,'多肉':365,'绿萝':365
+  },
+  contentTemplates:{
+    xhs:'#水培蔬菜 #0农残 #家庭种菜 #阳台种菜 #从种子到收获 #健康饮食 #水培 #现摘现吃 #无土栽培',
+    douyin:'#水培蔬菜 #0农残 #家庭种菜 #阳台种菜 #从种子到收获 #健康饮食 #水培'
+  },
+  nutrientSet:{aMl:500,bMl:500,retail:49.9,cost:25},
+  // 种植百科
+  cropWiki:{
+    '奶油生菜':{temp:'15-25℃',light:'中等光照，每天8-12小时',ph:'5.5-6.5',tip:'播种后3-5天发芽，25天可采。采收外叶保留心叶可持续收获。喜凉怕热，夏季水温超过28℃需降温。'},
+    '紫生菜':{temp:'15-25℃',light:'中等光照，每天8-12小时',ph:'5.5-6.5',tip:'紫色品种花青素含量高，光照充足颜色更深。28天可采，比绿生菜稍慢。'},
+    '油麦菜':{temp:'15-25℃',light:'中等光照',ph:'5.5-6.5',tip:'生长快25天可采，耐寒性好。叶片细长口感清脆，适合涮火锅。'},
+    '上海青':{temp:'15-25℃',light:'充足光照',ph:'5.5-6.5',tip:'最快20天可采的新手友好品种。耐寒耐热性都好，四季可种。'},
+    '黑心乌':{temp:'10-20℃',light:'中等光照',ph:'5.5-6.5',tip:'秋冬品种，耐寒性强。叶片深绿带乌色，口感绵甜。28天可采。'},
+    '羽衣甘蓝':{temp:'10-25℃',light:'充足光照',ph:'5.5-6.8',tip:'营养之王，维生素C含量极高。35天可采外叶，中心继续长。耐寒性强。'},
+    '冰菜':{temp:'15-25℃',light:'充足光照',ph:'5.5-6.5',tip:'叶面透明囊状细胞是冰菜特色，自带咸味。30天可采，不宜密植。怕高温。'},
+    '茼蒿':{temp:'15-20℃',light:'中等光照',ph:'5.5-6.5',tip:'火锅必备菜，25天可采。有特殊清香味，自带驱虫效果。春秋最佳。'},
+    '空心菜':{temp:'25-35℃',light:'充足光照',ph:'5.5-6.5',tip:'夏季品种，耐高温。25天可采，掐尖后侧枝疯长，越掐越多。'},
+    '菠菜':{temp:'10-20℃',light:'中等光照',ph:'6.0-7.0',tip:'喜凉怕热，春秋最佳。30天可采，缺铁补铁好蔬菜。'},
+    '韭菜':{temp:'15-25℃',light:'中等光照',ph:'5.5-6.5',tip:'割了又长的永续蔬菜，80天首次采收，之后每20天割一次。割后3天别浇水。'},
+    '芹菜':{temp:'15-20℃',light:'中等光照',ph:'5.5-6.5',tip:'60天周期，前期慢后期快。需水量大，水箱不能缺水。茎杆脆嫩。'},
+    '苋菜':{temp:'25-35℃',light:'充足光照',ph:'5.5-6.5',tip:'夏季品种，耐热好种。30天可采，红苋菜铁含量高。'},
+    '苦菊':{temp:'15-25℃',light:'中等光照',ph:'5.5-6.5',tip:'微苦清火，凉拌佳品。30天可采，外叶先摘。'},
+    '香菜':{temp:'15-20℃',light:'中等光照',ph:'6.0-7.0',tip:'发芽慢需7-10天，35天可采。怕热，春秋冬可种。调味提鲜必备。'},
+    '小葱':{temp:'15-25℃',light:'充足光照',ph:'5.5-6.5',tip:'20天快速采收。可用买来的葱根直接水培，长得更快。'},
+    '紫苏':{temp:'20-30℃',light:'充足光照',ph:'5.5-6.5',tip:'40天可采，日本料理/韩式烤肉必备。摘叶后侧枝继续长。'},
+    '薄荷':{temp:'15-25℃',light:'中等光照',ph:'5.5-6.5',tip:'60天可采，泡茶/调饮/驱蚊。生命力极强，注意修剪别让它疯长。'},
+    '罗勒':{temp:'20-30℃',light:'充足光照',ph:'5.5-6.5',tip:'40天可采，意式料理灵魂。经常摘心促进侧枝，越摘越多。'},
+    '茴香':{temp:'15-25℃',light:'充足光照',ph:'5.5-6.5',tip:'50天可采，叶片可调味，球茎可炒菜。根系发达需深水槽。'},
+    '穿心莲':{temp:'20-30℃',light:'中等光照',ph:'5.5-6.5',tip:'30天可采，药用蔬菜，清热解毒。扦插极易成活。'},
+    '秋葵':{temp:'25-35℃',light:'充足光照',ph:'5.5-6.5',tip:'55天采收，夏季品种。花朵也好看，果荚嫩时摘，老了变硬。'},
+    '辣椒':{temp:'20-30℃',light:'充足光照',ph:'5.5-6.5',tip:'75天挂果，观赏+实用。需要人工授粉（轻摇花朵）。'},
+    '小番茄':{temp:'20-28℃',light:'充足光照',ph:'5.5-6.5',tip:'70天挂果，需要人工授粉。结果后需支架。T/F型号大设备推荐。'},
+    '草莓':{temp:'15-25℃',light:'充足光照',ph:'5.5-6.5',tip:'60天结果，秋冬春可种。需人工授粉（毛笔轻刷花心）。F型号四层大设备首选。'}
+  }
+};
+
+// ====== State (localStorage) ======
+function loadState(){
+  try{
+    var s = localStorage.getItem('xinCaiYuanState_v3');
+    if(s) return JSON.parse(s);
+  }catch(e){}
+  return {crops:[],harvestCount:0,savedMoney:0,score:0,startDate:null,devices:[],orders:[]};
+}
+function saveState(){
+  try{ localStorage.setItem('xinCaiYuanState_v3', JSON.stringify(state)); }catch(e){}
+}
+var state = loadState();
+
+// ====== Toast ======
+function showToast(msg){
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2000);
+}
+
+// ====== Chat Engine ======
+var chatEl = document.getElementById('chat');
+var inputEl = document.getElementById('input');
+
+function addMsg(type, html){
+  var div = document.createElement('div');
+  div.className = 'msg ' + type;
+  var avatar = type==='ai' ? '芯' : '我';
+  div.innerHTML = '<div class="avatar">'+avatar+'</div><div class="bubble">'+html+'</div>';
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return div;
+}
+function addCard(html){
+  var div = document.createElement('div');
+  div.className = 'card-msg';
+  div.innerHTML = html;
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return div;
+}
+function addTyping(){
+  var div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'typingMsg';
+  div.innerHTML = '<div class="avatar">芯</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+function removeTyping(){
+  var t = document.getElementById('typingMsg');
+  if(t) t.remove();
+}
+function aiSay(text, delay){
+  delay = delay || 600;
+  addTyping();
+  setTimeout(function(){
+    removeTyping();
+    addMsg('ai', text);
+  }, delay);
+}
+function userSay(text){ addMsg('user', text); }
+function aiSayLong(text, delay){
+  delay = delay || 600;
+  addTyping();
+  setTimeout(function(){
+    removeTyping();
+    var div = addMsg('ai', '');
+    var bubble = div.querySelector('.bubble');
+    var i = 0;
+    var timer = setInterval(function(){
+      if(i < text.length){
+        bubble.innerHTML = text.substring(0, i+1);
+        chatEl.scrollTop = chatEl.scrollHeight;
+        i += Math.ceil(text.length/50);
+      } else {
+        bubble.innerHTML = text;
+        clearInterval(timer);
+      }
+    }, 20);
+  }, delay);
+}
+
+// ====== User Actions ======
+function userAction(action){
+  switch(action){
+    case 'pick':
+      userSay('帮我选一台设备');
+      aiSayLong('好的！我来帮你选。回答3个问题就行：\n\n1️⃣ 家里几口人？\n2️⃣ 放在哪里？（厨房/阳台/客厅）\n3️⃣ 预算多少？\n\n或者直接点下面快捷选择：', 400);
+      setTimeout(function(){
+        addCard(
+          '<div class="card-title">🏠 快速选择</div>'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+          '<button class="quick-btn" onclick="quickPick(3,\'厨房\',500)">3口人·厨房·500内</button>'+
+          '<button class="quick-btn" onclick="quickPick(4,\'阳台\',1000)">4口人·阳台·1000内</button>'+
+          '<button class="quick-btn" onclick="quickPick(2,\'客厅\',300)">2口人·客厅·先试试</button>'+
+          '<button class="quick-btn" onclick="quickPick(5,\'阳台\',2000)">5口人·多种点·2000内</button>'+
+          '</div>'
+        );
+      }, 1200);
+      break;
+    case 'care':
+      userSay('今天该做什么？');
+      if(state.crops.length === 0){
+        aiSayLong('你的菜园还没有添加菜品。\n\n点击底部「我的菜园」→「添加新菜品」，告诉我你种了什么菜、用哪个设备、哪天种的。\n\n添加后我每天自动提醒你该做什么 👍', 500);
+      } else {
+        var careText = '你的菜园有 '+state.crops.length+' 种菜品在种：\n\n';
+        state.crops.forEach(function(c){
+          var cropInfo = KB.crops.find(function(k){return k.name===c.name}) || {days:30};
+          var dayNum = Math.floor((Date.now() - c.plantDate) / 86400000) + 1;
+          var progress = Math.min(dayNum / cropInfo.days * 100, 100);
+          if(progress < 30){
+            careText += '🌱 '+c.name+' 第'+dayNum+'天 · 发芽期\n';
+          } else if(progress < 80){
+            careText += '🌿 '+c.name+' 第'+dayNum+'天 · 生长期\n';
+          } else if(progress < 100){
+            careText += '✅ '+c.name+' 第'+dayNum+'天 · 可以采摘了！\n';
+          } else {
+            careText += '🔄 '+c.name+' 第'+dayNum+'天 · 该采收了\n';
+          }
+        });
+        careText += '\n👉 今天需要做的：检查水位，缺水就补一下。';
+        aiSayLong(careText, 500);
+      }
+      break;
+    case 'content':
+      userSay('帮我写一条小红书文案');
+      aiSayLong('好嘞！根据你的种植记录，我帮你写了一条：', 400);
+      setTimeout(function(){
+        var title = '火锅开了菜还没买，儿子说不用买，直接去客厅剪了';
+        var body = '从一颗种子到直接下锅，水培种菜到底要几天？\n\n';
+        if(state.crops.length > 0){
+          state.crops.forEach(function(c){
+            var dayNum = Math.floor((Date.now() - c.plantDate) / 86400000) + 1;
+            body += c.name+'第'+dayNum+'天\n';
+          });
+          body += '\n';
+        }
+        body += '水培和土培最大的区别是根系——\n干干净净白花花的根，没有泥巴，不用洗半天。\n0农残、0激素、0重金属，剪下来直接下锅。\n\n一家四口的叶菜循环吃，基本不用买菜了。\n想吃啥种啥，现剪现吃，这才是真正的菜篮子。';
+        addCard(
+          '<div class="card-title">✍️ 小红书文案</div>'+
+          '<div class="content-result">'+
+          '<div class="label">标题</div>'+
+          '<div style="font-weight:700;margin-bottom:8px">'+title+'</div>'+
+          '<div class="label">正文</div>'+
+          '<div>'+body.replace(/\n/g,'<br>')+'</div>'+
+          '<div class="label" style="margin-top:8px">话题</div>'+
+          '<div style="font-size:12px;color:var(--muted)">'+KB.contentTemplates.xhs+'</div>'+
+          '<button class="copy-btn" onclick="copyText(this,\''+title.replace(/'/g,"\\'")+'\\n\\n'+body.replace(/\n/g,'\\n').replace(/'/g,"\\'")+'\\n\\n'+KB.contentTemplates.xhs+'\')">复制全部</button>'+
+          '</div>'
+        );
+      }, 1000);
+      break;
+    case 'cost':
+      userSay('种菜和买菜比哪个划算？');
+      aiSayLong('好问题！帮你算一笔账：', 400);
+      setTimeout(function(){
+        addCard(
+          '<div class="card-title">📊 种菜 vs 买菜 成本对比</div>'+
+          '<div style="font-size:13px;margin-bottom:8px">以<b>D款44口设备</b>、一家3口为例：</div>'+
+          '<div class="cost-result">'+
+          '<div class="cost-box"><div class="num red">¥998</div><div class="lbl">设备一次性投入</div></div>'+
+          '<div class="cost-box"><div class="num">¥30/月</div><div class="lbl">种子+营养液</div></div>'+
+          '<div class="cost-box"><div class="num">¥150/月</div><div class="lbl">买菜花费(3口)</div></div>'+
+          '<div class="cost-box"><div class="num">25天</div><div class="lbl">首批采收周期</div></div>'+
+          '</div>'+
+          '<div class="cost-summary">'+
+          '设备回本周期：<strong>约8个月</strong><br>'+
+          '<span style="font-size:12px">之后每月省¥120+，一年省¥1440<br>0农残0激素，吃得更放心</span>'+
+          '</div>'
+        );
+      }, 1000);
+      break;
+    case 'compare':
+      userSay('水培和土培有什么区别？');
+      aiSayLong('这是最核心的问题！帮你做个对比：', 400);
+      setTimeout(function(){
+        var threeWayHtml = KB.compare.threeWay.map(function(c){
+          return '<div class="compare-card-item '+c.type+'"><strong>'+c.title+'</strong><span>'+c.desc+'</span></div>';
+        }).join('');
+        addCard(
+          '<div class="card-title">🔍 三大种植方式全对比</div>'+
+          '<div class="compare-cards">'+threeWayHtml+'</div>'+
+          '<table class="compare-table" style="margin-top:12px">'+
+          '<tr><th>对比项</th><th>水培 ✅</th><th>土培 ⚠️</th></tr>'+
+          KB.compare.points.map(function(p){
+            return '<tr><td>'+p[0]+'</td><td class="highlight">'+p[1]+'</td><td>'+p[2]+'</td></tr>';
+          }).join('')+
+          '</table>'+
+          '<div style="margin-top:10px;padding:8px 12px;background:var(--mint);border-radius:8px;font-size:12px">'+
+          '💡 <b>数智农业5个0</b>：0农残 · 0激素 · 0催熟 · 0重金属 · 0污染<br>'+
+          '水培不是"不用土"这么简单，是从根上解决了食品安全问题。'+
+          '</div>'
+        );
+      }, 1000);
+      break;
+  }
+}
+
+function quickPick(family, place, budget){
+  userSay(family+'口人，放'+place+'，预算'+budget+'内');
+  var rec;
+  if(budget <= 300) rec = KB.devices[0];
+  else if(budget <= 500) rec = KB.devices[1];
+  else if(budget <= 1000) rec = KB.devices[2];
+  else if(budget <= 1700) rec = KB.devices[3];
+  else rec = KB.devices[4];
+  aiSayLong(family+'口人放'+place+'，预算'+budget+'元以内——\n\n我推荐：', 500);
+  setTimeout(function(){
+    addCard(renderDeviceCard(rec, true));
+  }, 1000);
+}
+
+// ====== Input handling ======
+function onInput(el){
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+function onKey(e){
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendInput(); }
+}
+function sendInput(){
+  var text = inputEl.value.trim();
+  if(!text) return;
+  userSay(text);
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+  setTimeout(function(){
+    /* 精准关键词匹配，避免误触发 */
+    var has = function(){ for(var i=0;i<arguments.length;i++){ if(text.indexOf(arguments[i])>=0) return true; } return false; };
+
+    if(has('选设备','买','推荐设备','哪个设备','选哪个','选一台','多少钱的设备')){
+      userAction('pick');
+    } else if(has('今天该做','今天做','该做啥','做什么','任务','浇水','换水','该浇水','提醒')){
+      userAction('care');
+    } else if(has('写文案','发小红书','发抖音','自媒体','种菜日记','发笔记')){
+      userAction('content');
+    } else if(has('多少钱','划算','成本','比一比','性价比')){
+      userAction('cost');
+    } else if(has('土培','区别','水培和','水培跟','水培vs','和土培','比土培')){
+      userAction('compare');
+    } else if(has('0农残','有农残','有农药','农残检测','有激素','有催熟','有污染','重金属','健康吗','安全吗','干净吗','能放心')){
+      aiSayLong(
+        '我们的水培菜是<b>0农残</b>的，这是确定的，可以作为核心卖点。\n\n'+
+        '数智农业5个0：\n'+
+        '✅ 0农残 — 无土室内种植，0农药0化肥残留\n'+
+        '✅ 0激素 — 不使用任何植物激素\n'+
+        '✅ 0催熟 — 到该摘的时候再摘\n'+
+        '✅ 0重金属 — 重金属降低98%\n'+
+        '✅ 0污染 — 室内种植隔绝外部污染\n\n'+
+        '这些不是口号，是有检测报告的。\n\n'+
+        '👉 点击底部「我的」可以查看完整健康档案。', 500
+      );
+    } else if(has('几天','多久能','多长时间','要多久','周期','什么时候能吃')){
+      aiSayLong(
+        '不同菜的种植周期：\n\n'+
+        '🥬 上海青：20天\n🥬 奶油生菜：25天\n🥬 茼蒿：25天\n🥬 冰菜：30天\n🥬 羽衣甘蓝：35天\n🍓 草莓：60天\n\n'+
+        '叶菜一般20-35天就能采收，而且是循环种植——\n外叶先摘，中心继续长，每天都能吃新鲜的。', 500
+      );
+    } else if(has('你好','在吗','hi','hello','嗨','你是谁')){
+      aiSayLong(
+        '你好！我是小芯 🌱\n\n你的AI种植管家，可以帮你：\n\n'+
+        '🤖 选设备 — 告诉我家里几口人、放哪里\n'+
+        '💧 陪种植 — 每天提醒该做什么\n'+
+        '✍️ 写文案 — 自动生成种植日记\n'+
+        '📊 算成本 — 种菜vs买菜哪个划算\n'+
+        '🔍 做对比 — 水培vs土培区别\n\n'+
+        '直接点下面快捷按钮，或问我任何问题！', 500
+      );
+    } else if(has('营养液','ab液','A液','B液','加多少','配比','浓度','ec','tds')){
+      aiSayLong(
+        '💧 营养液使用指南\n\n'+
+        '<b>添加时机：</b>\n'+
+        '• 第一次种：加水后按比例倒入A液和B液\n'+
+        '• 后续：水位低于1/3时补水+营养液\n\n'+
+        '<b>配比（以D型44口为例）：</b>\n'+
+        '• 10L水箱：A液25ml + B液25ml\n'+
+        '• S型5L水箱：A液12ml + B液12ml\n'+
+        '• T型10L水箱：A液25ml + B液25ml\n'+
+        '• F型48L水箱：A液120ml + B液120ml\n\n'+
+        '<b>注意事项：</b>\n'+
+        '⚠️ A液和B液不能直接混合，要分别倒入水中\n'+
+        '⚠️ 每2周彻底换一次水+营养液\n'+
+        '⚠️ 夏天蒸发快，适当多加\n\n'+
+        '需要购买补给包可以点「我的」→「补给复购」', 500
+      );
+    } else if(has('种子','催芽','育苗','泡种子','发芽','播种','怎么种')){
+      aiSayLong(
+        '🌱 播种催芽指南\n\n'+
+        '<b>步骤：</b>\n'+
+        '1️⃣ 种子浸泡4-6小时（温水）\n'+
+        '2️⃣ 播在湿润的定植棉上，一孔1-2粒\n'+
+        '3️⃣ 覆盖薄薄一层棉，喷湿\n'+
+        '4️⃣ 放暗处1-2天催芽\n'+
+        '5️⃣ 出芽后移到设备上，开灯\n\n'+
+        '<b>不同菜发芽时间：</b>\n'+
+        '🥬 生菜类：2-3天\n🥬 白菜类：1-2天\n🌿 香草类：5-7天\n🍓 草莓：7-14天\n\n'+
+        '<b>温度：</b> 25°C左右最理想\n<b>湿度：</b> 定植棉保持湿润不积水', 500
+      );
+    } else if(has('虫子','虫害','长虫','飞虫','蚜虫','白粉虱','病','黄叶','烂根','发黄')){
+      aiSayLong(
+        '🐛 常见问题诊断\n\n'+
+        '<b>黄叶：</b> 可能营养液不足或光照不够 → 加营养液+检查灯是否开\n\n'+
+        '<b>烂根：</b> 水温太高或营养液浓度过高 → 换水+降低浓度\n\n'+
+        '<b>飞虫：</b> 水培一般很少长虫，如果有 → 检查是否有土培植物 nearby\n\n'+
+        '<b>长势慢：</b> 可能温度低/光照不足 → 确保每天开灯12-16小时\n\n'+
+        '<b>叶片有斑点：</b> 可能营养液溅到叶片 → 擦掉即可\n\n'+
+        '水培最大优势就是<b>几乎不会有土培的病虫害</b>，因为无土环境不适合虫卵生存 🦠\n\n'+
+        '如果问题持续，可以拍照让我看看，或点「我的」→「联系客服」找人工', 500
+      );
+    } else if(has('温度','湿度','光照','开灯','关灯','灯','补光','阳光','放哪','放哪里','位置')){
+      aiSayLong(
+        '💡 种植环境指南\n\n'+
+        '<b>光照：</b>\n'+
+        '• 设备LED灯每天开12-16小时\n'+
+        '• 建议定时：早7点-晚11点\n'+
+        '• 不需要额外阳光，LED够了\n\n'+
+        '<b>温度：</b>\n'+
+        '• 最佳：18-28°C\n'+
+        '• 室温即可，不需要加热\n'+
+        '• 避免空调直吹\n\n'+
+        '<b>位置：</b>\n'+
+        '✅ 客厅、厨房、阳台内侧\n'+
+        '❌ 不要放室外（雨水+虫害）\n'+
+        '❌ 不要放暖气/空调出风口旁\n\n'+
+        '设备自带LED灯+水箱循环，放在室内任何角落都行', 500
+      );
+    } else if(has('采收','怎么采','能吃了吗','何时采','怎么收','怎样采','采摘要点','叶子能吃吗','什么时候采收','什么时候收')){
+      aiSayLong(
+        '🥬 采收指南\n\n'+
+        '<b>采收信号：</b>\n'+
+        '• 叶菜长到15-20cm就可以采\n'+
+        '• 外层大叶先摘，中心留着继续长\n\n'+
+        '<b>采收方法：</b>\n'+
+        '1️⃣ 用剪刀从根部上方2-3cm处剪外叶\n'+
+        '2️⃣ 留中心3-4片小叶\n'+
+        '3️⃣ 3-5天后又能采第二茬\n\n'+
+        '<b>循环种植：</b>\n'+
+        '水培菜是<b>割了还会长</b>的！\n'+
+        '外叶摘了→中心继续长→7-10天后再采\n'+
+        '一棵菜可以采3-5茬 😊\n\n'+
+        '采下来不用洗泥巴，直接下锅！', 500
+      );
+    } else if(has('清洗','维护','保养','换水','洗水箱','清洁')){
+      aiSayLong(
+        '🧹 设备维护指南\n\n'+
+        '<b>日常（每周）：</b>\n'+
+        '• 检查水位，低于1/3补水\n'+
+        '• 擦拭LED灯罩上的水汽\n\n'+
+        '<b>定期（每2周）：</b>\n'+
+        '• 彻底换水：倒掉旧水→清水冲洗水箱→加新水+营养液\n'+
+        '• 检查根系：剪掉发黄的根\n\n'+
+        '<b>每月：</b>\n'+
+        '• 清洗水泵滤网\n'+
+        '• 检查定植棉是否发霉，发霉就换新的\n\n'+
+        '💡 小技巧：换水时把菜连着定植棉拿出来放盆里，换完水再放回去', 500
+      );
+    } else if(has('孩子','小孩','宝宝','亲子','教育','学校','幼儿园')){
+      aiSayLong(
+        '👶 亲子种植指南\n\n'+
+        '水培种植特别适合带孩子一起玩！\n\n'+
+        '<b>孩子能做什么：</b>\n'+
+        '🌱 播种 — 小手放种子刚刚好\n📸 拍照 — 每天拍一张记录变化\n🥬 采摘 — 剪菜下锅，满满的成就感\n\n'+
+        '<b>教育价值：</b>\n'+
+        '• 观察植物生长全过程\n'+
+        '• 理解光合作用（灯=阳光）\n'+
+        '• 培养责任感和耐心\n'+
+        '• 0农残，孩子摸了不用洗手\n\n'+
+        '点「我的菜园」→选一种菜→「日常」记录，就是最好的自然日记 📖', 500
+      );
+    } else if(has('省钱','成本','划算','买菜','多少钱','投入','回本','经济')){
+      aiSayLong(
+        '💰 种菜vs买菜 成本对比\n\n'+
+        '<b>种菜成本：</b>\n'+
+        '• 设备一次性投入：¥498-2980\n'+
+        '• 种子+营养液月耗：约¥30/月\n'+
+        '• 电费：约¥5/月（LED很省电）\n\n'+
+        '<b>买菜成本：</b>\n'+
+        '• 一家三口每月蔬菜：约¥300-500\n'+
+        '• 有机蔬菜更贵：¥500-800/月\n\n'+
+        '<b>回本周期（D型¥998为例）：</b>\n'+
+        '月省¥300 → 约3-4个月回本\n'+
+        '之后每月省¥300+，一年省¥3600+\n\n'+
+        '而且自己种的0农残、现摘现吃、不用洗泥巴，这账不用算都值！', 500
+      );
+    } else if(has('草莓','水果','种草莓')){
+      aiSayLong(
+        '🍓 草莓种植指南\n\n'+
+        '<b>周期：</b> 约60天（比叶菜长）\n\n'+
+        '<b>要点：</b>\n'+
+        '• 温度：18-25°C最理想\n'+
+        '• 光照：每天12-14小时\n'+
+        '• 授粉：室内没蜜蜂，需要人工授粉（用毛笔轻刷花蕊）\n'+
+        '• 营养液：结果期稍微加量\n\n'+
+        '<b>注意：</b>\n'+
+        '草莓比叶菜难种一些，建议先用叶菜练手，再挑战草莓\n'+
+        'T型66口或F型120口最适合种草莓（空间大）\n\n'+
+        '自己种的草莓0农残0激素，孩子直接摘了吃放心！', 500
+      );
+    } else {
+      /* 未匹配关键词，调用大模型回答 */
+      aiSay('正在思考... 🤔', 200);
+      callLLM(text);
+    }
+  }, 300);
+}
+
+// ====== LLM (文心大模型) ======
+var llmAvailable = null; // null=未检测, true=可用, false=不可用
+
+function callLLM(message){
+  fetch('/api/chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({message: message})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.reply){
+      llmAvailable = true;
+      // 移除"正在思考"消息
+      var thinking = chatEl.querySelector('.msg.ai:last-child');
+      if(thinking && thinking.textContent.indexOf('正在思考') >= 0) thinking.remove();
+      aiSayLong(data.reply, 300);
+    } else {
+      llmAvailable = false;
+      var thinking = chatEl.querySelector('.msg.ai:last-child');
+      if(thinking && thinking.textContent.indexOf('正在思考') >= 0) thinking.remove();
+      aiSayLong(
+        '我是小芯，你的AI种植管家。我可以帮你：\n\n'+
+        '🤖 <b>选设备</b> — 告诉我家里几口人、放哪里、预算多少\n'+
+        '💧 <b>陪种植</b> — 每天提醒你该做什么\n'+
+        '✍️ <b>写文案</b> — 自动生成小红书/抖音种植日记\n'+
+        '📊 <b>算成本</b> — 种菜vs买菜哪个划算\n'+
+        '🔍 <b>做对比</b> — 水培vs土培有什么区别\n\n'+
+        '直接点下面的快捷按钮，或者问我种植相关问题！', 300
+      );
+    }
+  })
+  .catch(function(e){
+    var thinking = chatEl.querySelector('.msg.ai:last-child');
+    if(thinking && thinking.textContent.indexOf('正在思考') >= 0) thinking.remove();
+    aiSayLong(
+      '我是小芯，你的AI种植管家。我可以帮你：\n\n'+
+      '🤖 <b>选设备</b> — 告诉我家里几口人、放哪里、预算多少\n'+
+      '💧 <b>陪种植</b> — 每天提醒你该做什么\n'+
+      '✍️ <b>写文案</b> — 自动生成小红书/抖音种植日记\n'+
+      '📊 <b>算成本</b> — 种菜vs买菜哪个划算\n'+
+      '🔍 <b>做对比</b> — 水培vs土培有什么区别\n\n'+
+      '直接点下面的快捷按钮，或者问我种植相关问题！', 300
+    );
+  });
+}
+
+// ====== View Switching ======
+function switchView(view){
+  document.querySelectorAll('.view').forEach(function(el){el.classList.remove('active')});
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active')});
+  var navBtn = document.querySelector('[data-view="'+view+'"]');
+  if(navBtn) navBtn.classList.add('active');
+  if(view === 'garden') renderGarden();
+  if(view === 'shop') renderShop();
+  if(view === 'mine') renderMine();
+}
+
+// ====== Voice Input ======
+var voiceMode = false;
+var voiceRecognition = null;
+var isRecording = false;
+var voiceTranscript = ''; // 实时存储识别结果
+
+// 检测浏览器是否支持语音识别
+function checkVoiceSupport(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return false;
+  // 微信内置浏览器也不支持
+  var ua = navigator.userAgent.toLowerCase();
+  if(ua.indexOf('micromessenger') > -1) return false;
+  return true;
+}
+
+// 页面加载后检测，不支持就隐藏语音按钮
+(function(){
+  setTimeout(function(){
+    if(!checkVoiceSupport()){
+      var toggle = document.getElementById('voiceToggle');
+      if(toggle) toggle.style.display = 'none';
+    }
+  }, 100);
+})();
+
+function toggleVoiceMode(){
+  if(!checkVoiceSupport()){
+    showToast('当前浏览器不支持语音，请用Chrome浏览器打开');
+    return;
+  }
+  voiceMode = !voiceMode;
+  var toggle = document.getElementById('voiceToggle');
+  var textWrap = document.getElementById('textInputWrap');
+  var voiceBtn = document.getElementById('voiceInputBtn');
+  var sendBtn = document.getElementById('sendBtn');
+  if(voiceMode){
+    toggle.classList.add('active');
+    toggle.textContent = '⌨️';
+    textWrap.style.display = 'none';
+    voiceBtn.style.display = 'flex';
+    sendBtn.style.display = 'none';
+  } else {
+    toggle.classList.remove('active');
+    toggle.textContent = '🎤';
+    textWrap.style.display = 'block';
+    voiceBtn.style.display = 'none';
+    sendBtn.style.display = 'grid';
+  }
+}
+
+function startVoice(e){
+  e.preventDefault();
+  if(isRecording) return;
+  isRecording = true;
+  voiceTranscript = '';
+  var btn = document.getElementById('voiceInputBtn');
+  var tip = document.getElementById('voiceTip');
+  btn.classList.add('recording');
+  btn.textContent = '松开发送';
+  if(tip) tip.classList.add('show');
+  
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    showToast('浏览器不支持语音，请用Chrome打开');
+    isRecording = false;
+    btn.classList.remove('recording');
+    btn.textContent = '按住说话';
+    if(tip) tip.classList.remove('show');
+    return;
+  }
+  
+  voiceRecognition = new SR();
+  voiceRecognition.lang = 'zh-CN';
+  voiceRecognition.continuous = true;    // 改为true，持续识别
+  voiceRecognition.interimResults = true; // 改为true，获取中间结果
+  
+  voiceRecognition.onresult = function(event){
+    var finalText = '';
+    var interimText = '';
+    for(var i = 0; i < event.results.length; i++){
+      if(event.results[i].isFinal){
+        finalText += event.results[i][0].transcript;
+      } else {
+        interimText += event.results[i][0].transcript;
+      }
+    }
+    voiceTranscript = finalText + interimText;
+    // 实时显示识别中的文字
+    var btn = document.getElementById('voiceInputBtn');
+    if(voiceTranscript){
+      btn.textContent = voiceTranscript.substring(0, 20);
+    }
+  };
+  
+  voiceRecognition.onerror = function(event){
+    if(event.error === 'not-allowed' || event.error === 'service-not-allowed'){
+      showToast('未获得麦克风权限，请在浏览器设置中允许');
+    } else if(event.error === 'no-speech'){
+      // 没检测到语音，不报错
+    } else if(event.error === 'network'){
+      showToast('网络问题导致语音识别失败，请检查网络');
+    } else if(event.error === 'audio-capture'){
+      showToast('未检测到麦克风设备');
+    } else if(event.error === 'aborted'){
+      // 用户主动中止，不报错
+    } else {
+      showToast('语音识别失败，建议用Chrome浏览器重试');
+    }
+  };
+  
+  voiceRecognition.onend = function(){
+    // 识别结束，结果已在voiceTranscript中
+  };
+  
+  try {
+    voiceRecognition.start();
+  } catch(err){
+    showToast('语音启动失败，请用Chrome浏览器打开此页面');
+    isRecording = false;
+    btn.classList.remove('recording');
+    btn.textContent = '按住说话';
+    if(tip) tip.classList.remove('show');
+    toggleVoiceMode();
+  }
+}
+
+function stopVoice(e){
+  if(!isRecording) return;
+  isRecording = false;
+  var btn = document.getElementById('voiceInputBtn');
+  var tip = document.getElementById('voiceTip');
+  btn.classList.remove('recording');
+  btn.textContent = '按住说话';
+  if(tip) tip.classList.remove('show');
+  
+  if(voiceRecognition){
+    try { voiceRecognition.stop(); } catch(err){}
+  }
+  
+  // 延迟500ms等结果返回，再发送
+  setTimeout(function(){
+    var text = voiceTranscript.trim();
+    if(text){
+      inputEl.value = text;
+      sendInput();
+    } else {
+      showToast('没听清，请再试一次或用文字输入');
+    }
+    voiceTranscript = '';
+  }, 500);
+}
+
+// ====== Plant Recognition (optional) ======
+var baiduConfigured = false;  // 服务器端是否配置了植物识别
+
+// 启动时检查服务器是否配了识别功能
+function checkBaiduStatus(){
+  try{
+    if(typeof fetch === 'undefined'){ baiduConfigured = false; return; }
+    fetch('/api/baidu-status')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        baiduConfigured = !!(d && d.configured);
+      })
+      .catch(function(){ baiduConfigured = false; });
+  }catch(e){ baiduConfigured = false; }
+}
+checkBaiduStatus();
+
+// 通过本地服务器代理调用植物识别（密钥在后端，前端不暴露）
+function baiduRecognize(base64Img, cb){
+  if(!baiduConfigured){
+    cb(null);
+    return;
+  }
+  fetch('/api/plant-recognize', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({image: base64Img})
+  })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d.result && d.result.length > 0){
+        var top = d.result.slice(0, 5).map(function(item){
+          return {name:item.name, score:parseFloat(item.score)};
+        });
+        /* 附带第一条结果的百科信息 */
+        if(d.result[0].baike_info){
+          top.baike = {
+            description: d.result[0].baike_info.description,
+            url: d.result[0].baike_info.baike_url,
+            image: d.result[0].baike_info.image_url
+          };
+        }
+        cb(top);
+      } else {
+        cb(null);
+      }
+    })
+    .catch(function(){ cb(null); });
+}
+
+// ====== Camera Feature ======
+function takePhoto(){
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">📷 选择图片来源</div>'+
+    '<div style="display:flex;flex-direction:column;gap:10px">'+
+    '<button class="photo-source-btn green" onclick="openCamera()">📷 拍照</button>'+
+    '<button class="photo-source-btn" onclick="openAlbum()">🖼️ 从相册选择</button>'+
+    '</div>'+
+    '<div style="margin-top:12px;padding:10px;background:var(--mint);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.5">'+
+    '💡 拍照或选择图片后，AI会自动识别植物品种，匹配菜品库并给出种植建议。'+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function openCamera(){
+  closeOverlay();
+  setTimeout(function(){ document.getElementById('cameraInput').click(); }, 200);
+}
+
+function openAlbum(){
+  closeOverlay();
+  setTimeout(function(){ document.getElementById('albumInput').click(); }, 200);
+}
+
+function onPhotoSelected(input){
+  if(!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e){
+    showCameraResult(e.target.result);
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function showCameraResult(dataURL){
+  var overlay = document.getElementById('camOverlay');
+  var img = document.getElementById('camPreviewImg');
+  img.src = dataURL;
+  var loadingMsg = baiduConfigured ? 'AI正在识别植物品种...' : 'AI正在分析图片...';
+  document.getElementById('camResult').innerHTML =
+    '<div style="text-align:center;padding:20px">'+
+    '<div class="typing" style="justify-content:center;display:flex"><span></span><span></span><span></span></div>'+
+    '<div style="font-size:13px;color:var(--muted);margin-top:8px">'+loadingMsg+'</div>'+
+    '</div>';
+  overlay.classList.add('show');
+
+  /* 先尝试AI识别，失败则fallback到颜色分析 */
+  if(baiduConfigured){
+    baiduRecognize(dataURL, function(results){
+      if(results && results.length > 0){
+        /* AI识别成功，展示结果 */
+        var topName = results[0].name;
+        var confidence = results[0].score > 0.6 ? '高' : results[0].score > 0.3 ? '中' : '低';
+        var cropNames = results.map(function(r){return r.name;});
+        var extraStats = {green: 0, red: 0, purple: 0, confidence: confidence, aiMode: true};
+        if(results.baike){
+          extraStats.baike = results.baike;
+        }
+        showRecognitionResult('AI识别：'+topName, cropNames, dataURL, extraStats);
+      } else {
+        /* AI识别失败，fallback到颜色分析 */
+        setTimeout(function(){ analyzeImage(dataURL); }, 500);
+      }
+    });
+  } else {
+    /* 没有配置API Key，直接用颜色分析 */
+    setTimeout(function(){ analyzeImage(dataURL); }, 1500);
+  }
+}
+
+function analyzeImage(dataURL){
+  var img = new Image();
+  img.onload = function(){
+    var canvas = document.createElement('canvas');
+    var scale = Math.min(200 / img.width, 200 / img.height);
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    var data;
+    try{
+      data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    }catch(e){
+      showRecognitionResult('无法分析图片', [], dataURL);
+      return;
+    }
+
+    // HSV + RGB 双重分析，比纯RGB更准确
+    var count=0;
+    var greenPct=0, deepGreenPct=0, redPct=0, purplePct=0;
+    var yellowPct=0, brownPct=0, whitePct=0, orangePct=0, pinkPct=0;
+    var avgSat=0, avgVal=0;
+
+    for(var i=0; i<data.length; i+=4){
+      var pr=data[i], pg=data[i+1], pb=data[i+2];
+      count++;
+      var max=Math.max(pr,pg,pb), min=Math.min(pr,pg,pb);
+      var diff=max-min;
+      var v=max/255;
+      var s=max===0?0:diff/max;
+      var h=0;
+      if(diff>0){
+        if(max===pr) h=60*((pg-pb)/diff%6);
+        else if(max===pg) h=60*((pb-pr)/diff+2);
+        else h=60*((pr-pg)/diff+4);
+        if(h<0) h+=360;
+      }
+      avgSat+=s; avgVal+=v;
+
+      /* 用HSV色相分类，比RGB阈值更准 */
+      if(s>0.12 && v>0.15){
+        if(h>=60 && h<=180){ greenPct++; if(v<0.5&&s>0.3) deepGreenPct++; }
+        else if(h<=20 || h>=340){ redPct++; }
+        else if(h>20 && h<=45){ orangePct++; }
+        else if(h>45 && h<=70){ yellowPct++; }
+        else if(h>=270 && h<340){ purplePct++; }
+        else if(h>=310 && h<=350 && s<0.5){ pinkPct++; }
+      }
+      if(s<0.1 && v>0.85) whitePct++;
+      if(v>0.2 && v<0.55 && s>0.15 && s<0.55 && (h<=45||h>=340)) brownPct++;
+    }
+
+    avgSat=avgSat/count; avgVal=avgVal/count;
+    greenPct=greenPct/count; deepGreenPct=deepGreenPct/count;
+    redPct=redPct/count; purplePct=purplePct/count;
+    yellowPct=yellowPct/count; brownPct=brownPct/count;
+    whitePct=whitePct/count; orangePct=orangePct/count; pinkPct=pinkPct/count;
+
+    var result, crops, confidence;
+
+    if(whitePct > 0.12 && greenPct > 0.08){
+      result = '检测到白色花朵和绿叶';
+      confidence = '中';
+      crops = ['草莓','罗勒','薄荷'];
+    } else if(redPct > 0.06){
+      result = '检测到红色果实';
+      confidence = '高';
+      crops = redPct > 0.15 ? ['草莓','小番茄'] : ['草莓','小番茄','辣椒'];
+    } else if(deepGreenPct > 0.15){
+      result = '检测到深绿色叶菜';
+      confidence = '中';
+      crops = ['上海青','黑心乌','茼蒿','空心菜','菠菜'];
+    } else if(greenPct > 0.15){
+      result = '检测到绿色植物';
+      confidence = '中';
+      crops = ['奶油生菜','冰菜','羽衣甘蓝','罗勒','紫苏'];
+    } else if(purplePct > 0.06){
+      result = '检测到紫色植物';
+      confidence = '中';
+      crops = ['冰菜','羽衣甘蓝','紫苏'];
+    } else if(orangePct > 0.08){
+      result = '检测到橙色特征';
+      confidence = '低';
+      crops = ['秋葵','辣椒','小番茄'];
+    } else if(yellowPct > 0.08){
+      result = '检测到黄色特征';
+      confidence = '低';
+      crops = ['秋葵','辣椒','小番茄'];
+    } else if(brownPct > 0.12){
+      result = '检测到土壤或根部';
+      confidence = '低';
+      crops = ['奶油生菜','上海青','罗勒'];
+    } else if(pinkPct > 0.08){
+      result = '检测到粉色花朵';
+      confidence = '低';
+      crops = ['草莓','罗勒','薄荷'];
+    } else if(greenPct > 0.05){
+      result = '检测到植物特征';
+      confidence = '低';
+      crops = ['奶油生菜','上海青','冰菜','罗勒'];
+    } else {
+      result = '未检测到明显植物特征';
+      confidence = '低';
+      crops = ['奶油生菜','上海青','罗勒','薄荷'];
+    }
+
+    showRecognitionResult(result, crops, dataURL, {
+      green: Math.round(greenPct*100),
+      red: Math.round(redPct*100),
+      purple: Math.round(purplePct*100),
+      confidence: confidence
+    });
+  };
+  img.onerror = function(){
+    showRecognitionResult('图片加载失败', [], dataURL);
+  };
+  img.src = dataURL;
+}
+
+function showRecognitionResult(result, crops, dataURL, stats){
+  var confColor = stats && stats.confidence === '高' ? '#2E7D32' : stats && stats.confidence === '中' ? '#FF8F00' : '#999';
+  var html = '';
+
+  /* 1. 颜色分析结果 */
+  html += '<div style="text-align:center;margin-bottom:10px">'+
+    '<div style="font-size:14px;font-weight:700;color:var(--green)">🔍 '+result+'</div>';
+  if(stats){
+    if(stats.aiMode){
+      html += '<div style="font-size:11px;color:var(--muted);margin-top:4px">'+
+        'AI精准识别 · 置信度:<b style="color:'+confColor+'">'+stats.confidence+'</b></div>';
+      /* AI百科信息 */
+      if(stats.baike && stats.baike.description){
+        var desc = stats.baike.description;
+        if(desc.length > 120) desc = desc.substring(0, 120) + '…';
+        html += '<div style="font-size:11px;color:#666;margin-top:6px;line-height:1.5;text-align:left;background:var(--mint);padding:8px 10px;border-radius:8px">'+
+          '📖 '+desc+'</div>';
+        if(stats.baike.url){
+          html += '<a href="'+stats.baike.url+'" target="_blank" style="font-size:10px;color:var(--green);margin-top:4px;display:inline-block">查看百科详情 →</a>';
+        }
+      }
+    } else {
+      html += '<div style="font-size:11px;color:var(--muted);margin-top:4px">'+
+        '绿色'+stats.green+'% · 红色'+stats.red+'% · 紫色'+stats.purple+'%'+
+        ' · 置信度:<b style="color:'+confColor+'">'+stats.confidence+'</b></div>';
+    }
+  }
+  if(!stats || !stats.aiMode){
+    html += '<div style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.4">'+
+      '当前为颜色特征分析（测试版），后续将接入AI识别精准辨别品种</div>';
+  }
+  html += '</div>';
+
+  /* 2. AI推荐菜品 */
+  if(crops && crops.length > 0){
+    html += '<div style="margin-bottom:12px">'+
+      '<div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--green)">✨ '+(stats && stats.aiMode ? 'AI识别结果' : '根据颜色分析推荐')+'：</div>'+
+      '<div class="crop-options">';
+    crops.forEach(function(name){
+      var crop = KB.crops.find(function(k){return k.name===name});
+      var emoji = crop ? crop.emoji : '🥬';
+      html += '<div class="crop-option" onclick="confirmPhotoCrop(\''+name.replace(/'/g,"\\'")+'\')" style="cursor:pointer">'+
+        '<span class="emoji">'+emoji+'</span>'+name+
+      '</div>';
+    });
+    html += '</div></div>';
+  }
+
+  /* 3. 搜索框 */
+  html += '<input class="crop-search-input" id="cropSearchInput" placeholder="🔍 搜索菜品名…" oninput="filterCropGrid()" />';
+
+  /* 4. 分类按钮 */
+  html += '<div class="crop-cat-row">'+
+    '<button class="crop-cat-btn active" onclick="setCropCategory(\'all\',this)">全部</button>'+
+    '<button class="crop-cat-btn" onclick="setCropCategory(\'叶菜\',this)">🥬 叶菜</button>'+
+    '<button class="crop-cat-btn" onclick="setCropCategory(\'果菜\',this)">🍅 果菜</button>'+
+    '<button class="crop-cat-btn" onclick="setCropCategory(\'香草\',this)">🌿 香草</button>'+
+    '<button class="crop-cat-btn" onclick="setCropCategory(\'其他\',this)">🌱 其他</button>'+
+  '</div>';
+
+  /* 5. 分类网格 */
+  html += '<div class="crop-grid" id="cropGrid">'+renderCropGrid('all')+'</div>';
+
+  /* 6. 手填+重新拍照 */
+  html += '<div style="margin-top:10px">'+
+    '<input class="form-input" id="customCropName" placeholder="都没找到？手填菜品名" />'+
+    '<button class="quick-btn green" onclick="confirmPhotoCropCustom()" style="width:100%;justify-content:center;margin-top:8px">✅ 确认添加到菜园</button>'+
+    '</div>'+
+    '<button class="quick-btn" onclick="takePhoto()" style="width:100%;justify-content:center;margin-top:8px">🔄 重新拍一张</button>';
+
+  document.getElementById('camResult').innerHTML = html;
+}
+
+/* 菜品分类映射 */
+var cropCategoryMap = {
+  '奶油生菜':'叶菜','上海青':'叶菜','羽衣甘蓝':'叶菜','黑心乌':'叶菜',
+  '茼蒿':'叶菜','空心菜':'叶菜','菠菜':'叶菜','苋菜':'叶菜',
+  '苦菊':'叶菜','芹菜':'叶菜','韭菜':'叶菜','小葱':'叶菜',
+  '紫薯叶':'叶菜','芥蓝':'叶菜','菜心':'叶菜',
+  '草莓':'果菜','小番茄':'果菜','辣椒':'果菜','秋葵':'果菜',
+  '罗勒':'香草','薄荷':'香草','紫苏':'香草','香菜':'香草',
+  '冰菜':'其他','洋葱':'其他'
+};
+
+function renderCropGrid(cat, keyword){
+  var filtered = KB.crops.filter(function(c){
+    var cropCat = cropCategoryMap[c.name] || '其他';
+    var matchCat = cat === 'all' || cropCat === cat;
+    var matchSearch = !keyword || c.name.toLowerCase().indexOf(keyword.toLowerCase()) >= 0;
+    return matchCat && matchSearch;
+  });
+  if(filtered.length === 0){
+    return '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--muted);font-size:12px">未找到匹配菜品</div>';
+  }
+  return filtered.map(function(c){
+    return '<div class="crop-grid-item" onclick="confirmPhotoCrop(\''+c.name.replace(/'/g,"\\'")+'\')">'+
+      '<span class="emoji">'+c.emoji+'</span>'+
+      '<span class="name">'+c.name+'</span>'+
+      '<span class="days">'+c.days+'天</span>'+
+    '</div>';
+  }).join('');
+}
+
+function setCropCategory(cat, btn){
+  document.querySelectorAll('.crop-cat-btn').forEach(function(el){el.classList.remove('active')});
+  btn.classList.add('active');
+  var search = document.getElementById('cropSearchInput');
+  var keyword = search ? search.value.trim() : '';
+  document.getElementById('cropGrid').innerHTML = renderCropGrid(cat, keyword);
+}
+
+function filterCropGrid(){
+  var keyword = document.getElementById('cropSearchInput').value.trim();
+  var activeBtn = document.querySelector('.crop-cat-btn.active');
+  var cat = 'all';
+  if(activeBtn){
+    var text = activeBtn.textContent;
+    if(text.indexOf('叶菜') >= 0) cat = '叶菜';
+    else if(text.indexOf('果菜') >= 0) cat = '果菜';
+    else if(text.indexOf('香草') >= 0) cat = '香草';
+    else if(text.indexOf('其他') >= 0) cat = '其他';
+  }
+  document.getElementById('cropGrid').innerHTML = renderCropGrid(cat, keyword);
+}
+
+function confirmPhotoCrop(name){
+  closeCamOverlay();
+  var crop = KB.crops.find(function(k){return k.name===name});
+  state.crops.push({
+    name: name,
+    emoji: crop ? crop.emoji : '🥬',
+    device: '未指定',
+    deviceCode: 'S',
+    location: '拍照识别',
+    plantDate: Date.now(),
+    harvestLog: [],
+    logs: [{date:Date.now(), day:1, text:'拍照识别添加', photo:null}]
+  });
+  if(!state.startDate) state.startDate = Date.now();
+  saveState();
+  switchView('garden');
+  showToast('已添加 '+name+' 到菜园 🌱');
+}
+
+function confirmPhotoCropCustom(){
+  var name = document.getElementById('customCropName').value.trim();
+  if(!name){ showToast('请输入菜品名'); return; }
+  closeCamOverlay();
+  state.crops.push({
+    name: name,
+    emoji: '🥬',
+    device: '未指定',
+    deviceCode: 'S',
+    location: '拍照识别',
+    plantDate: Date.now(),
+    harvestLog: [],
+    logs: [{date:Date.now(), day:1, text:'拍照识别添加', photo:null}]
+  });
+  if(!state.startDate) state.startDate = Date.now();
+  saveState();
+  switchView('garden');
+  showToast('已添加 '+name+' 到菜园 🌱');
+}
+
+function closeCamOverlay(){
+  document.getElementById('camOverlay').classList.remove('show');
+  document.getElementById('camPreviewImg').src = '';
+}
+
+// ====== Garden Rendering ======
+function renderGarden(){
+  var totalDays = 0;
+  if(state.startDate){
+    totalDays = Math.floor((Date.now() - state.startDate) / 86400000) + 1;
+  } else if(state.crops.length > 0){
+    var earliest = Math.min.apply(null, state.crops.map(function(c){return c.plantDate}));
+    totalDays = Math.floor((Date.now() - earliest) / 86400000) + 1;
+    state.startDate = earliest;
+  }
+  document.getElementById('gardenDays').textContent = totalDays;
+  document.getElementById('gardenHarvest').textContent = state.harvestCount;
+  document.getElementById('gardenSaved').textContent = '¥' + state.savedMoney;
+  document.getElementById('gardenScore').textContent = state.score || (state.crops.length * 10 + state.harvestCount * 5);
+
+  var listEl = document.getElementById('cropList');
+  if(state.crops.length === 0){
+    listEl.innerHTML =
+      '<div style="text-align:center;padding:30px 0;color:var(--muted)">'+
+      '<div style="font-size:40px;margin-bottom:8px">🌱</div>'+
+      '<div style="font-size:14px">还没有添加菜品<br>点击下方按钮开始记录你的菜园</div>'+
+      '</div>';
+  } else {
+    listEl.innerHTML = state.crops.map(function(c, idx){
+      var cropInfo = KB.crops.find(function(k){return k.name===c.name}) || {days:30,emoji:'🥬'};
+      var dayNum = Math.floor((Date.now() - c.plantDate) / 86400000) + 1;
+      var progress = Math.min(dayNum / cropInfo.days * 100, 100);
+      var status, statusClass;
+      if(progress < 30){ status='发芽期'; statusClass='sprout'; }
+      else if(progress < 80){ status='生长期'; statusClass='growing'; }
+      else if(progress < 100){ status='可采摘'; statusClass='ready'; }
+      else { status='该采收'; statusClass='ready'; }
+
+      var stages = ['播种','发芽','长叶','采摘'];
+      var stageProgress = [0, 30, 80, 100];
+      var timelineHtml = '<div class="crop-timeline">';
+      stages.forEach(function(s, si){
+        var cls = '';
+        if(progress >= stageProgress[si]) cls = 'done';
+        else if(si > 0 && progress >= stageProgress[si-1]) cls = 'current';
+        timelineHtml += '<div class="tl-dot">'+
+          '<div class="tl-dot-day">第'+(Math.round(cropInfo.days * stageProgress[si] / 100))+'天</div>'+
+          '<div class="tl-dot-bar '+cls+'"></div>'+
+          '<div class="tl-dot-label">'+s+'</div>'+
+        '</div>';
+      });
+      timelineHtml += '</div>';
+
+      var logCount = c.logs ? c.logs.length : 0;
+
+      return '<div class="crop-card">'+
+        '<div class="crop-head">'+
+          '<span class="crop-name">'+cropInfo.emoji+' '+c.name+'</span>'+
+          '<span class="crop-status '+statusClass+'">'+status+'</span>'+
+        '</div>'+
+        '<div class="crop-meta">第'+dayNum+'天 / '+cropInfo.days+'天周期 · '+c.device+' · '+c.location+'</div>'+
+        '<div style="height:6px;background:#f0f5f0;border-radius:3px;overflow:hidden">'+
+          '<div style="height:100%;width:'+progress+'%;background:linear-gradient(90deg,var(--green2),var(--green));border-radius:3px;transition:.3s"></div>'+
+        '</div>'+
+        '<div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right">'+Math.round(progress)+'%'+(logCount>0?' · 📝 '+logCount+'条记录':'')+(c.harvestLog&&c.harvestLog.length>0?' · 🥬 采收'+c.harvestLog.length+'次':'')+'</div>'+
+        timelineHtml+
+        '<div class="crop-actions">'+
+          '<button class="quick-btn green" onclick="harvestCrop('+idx+')" style="flex:1;justify-content:center">🥬 采摘</button>'+
+          '<button class="quick-btn blue" onclick="openDailyLog('+idx+')" style="flex:1;justify-content:center">📝 日常</button>'+
+          '<button class="quick-btn hot" onclick="openCropContent('+idx+')" style="flex:1;justify-content:center">✍️ 文案</button>'+
+          '<button class="quick-btn" onclick="showCropWiki('+idx+')" style="justify-content:center">📖</button>'+
+          '<button class="quick-btn" onclick="editCrop('+idx+')" style="justify-content:center">✏️</button>'+
+          '<button class="quick-btn danger" onclick="deleteCrop('+idx+')" style="justify-content:center">🗑️</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  var achievements = [
+    {name:'首次添加菜品',done:state.crops.length>=1},
+    {name:'连续种植7天',done:totalDays>=7},
+    {name:'首次采收',done:state.harvestCount>=1},
+    {name:'采收5次',done:state.harvestCount>=5},
+    {name:'种满30天',done:totalDays>=30},
+    {name:'0农残认证',done:state.crops.length>=3}
+  ];
+  document.getElementById('achievementList').innerHTML = achievements.map(function(a){
+    return '<div class="'+(a.done?'done':'lock')+'">'+(a.done?'✅':'🔒')+' '+a.name+'</div>';
+  }).join('');
+
+  if(state.crops.length > 0){
+    var nextCrop = state.crops[0];
+    var ci = KB.crops.find(function(k){return k.name===nextCrop.name}) || {days:30};
+    var dn = Math.floor((Date.now() - nextCrop.plantDate) / 86400000) + 1;
+    document.getElementById('bannerTitle').textContent = nextCrop.name+'第'+dn+'天 · 长势跟踪中';
+    document.getElementById('bannerSub').textContent = '点击查看菜园详情';
+  }
+}
+
+// ====== Add Crop (with custom input) ======
+var selectedCropIdx = -1;
+var cropMode = 'select'; // 'select' or 'custom'
+
+function openAddCrop(){
+  cropMode = 'select';
+  selectedCropIdx = -1;
+  renderAddCropSheet();
+  document.getElementById('overlay').classList.add('show');
+}
+
+function renderAddCropSheet(){
+  var cropOptionsHtml = KB.crops.map(function(c, i){
+    return '<div class="crop-option" onclick="selectCrop('+i+')" data-crop="'+i+'">'+
+      '<span class="emoji">'+c.emoji+'</span>'+c.name+
+      '<div style="font-size:10px;color:var(--muted);margin-top:2px">'+c.days+'天</div>'+
+    '</div>';
+  }).join('');
+  var deviceOptionsHtml = KB.devices.map(function(d){
+    return '<option value="'+d.code+'">'+d.name+' ('+d.ports+'口/¥'+d.price+')</option>';
+  }).join('');
+
+  var selectContent = 
+    '<div class="crop-options" id="cropOptions">'+cropOptionsHtml+'</div>';
+
+  var customContent =
+    '<div class="form-group">'+
+      '<input class="form-input" id="customName" placeholder="输入菜品名（如：紫苏、薄荷、韭菜...）" oninput="autoMatchDays()" />'+
+      '<div id="matchHint" style="font-size:11px;color:var(--green);margin-top:4px;display:none"></div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+      '<div class="form-group">'+
+        '<input class="form-input" id="customDays" type="number" placeholder="生长周期(天) · 已知菜品自动填" />'+
+      '</div>'+
+      '<div class="form-group">'+
+        '<select class="form-select" id="customEmoji">'+
+          '<option value="🥬">🥬 叶菜</option>'+
+          '<option value="🌿">🌿 香草</option>'+
+          '<option value="🍓">🍓 果实</option>'+
+          '<option value="🍅">🍅 番茄</option>'+
+          '<option value="🥗">🥗 沙拉</option>'+
+          '<option value="🧊">🧊 冰菜</option>'+
+          '<option value="🌱">🌱 通用</option>'+
+        '</select>'+
+      '</div>'+
+    '</div>';
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">➕ 添加新菜品</div>'+
+    '<div class="crop-mode-toggle">'+
+      '<button class="crop-mode-btn '+(cropMode==='select'?'active':'')+'" onclick="switchCropMode(\'select\')">📋 选择菜品</button>'+
+      '<button class="crop-mode-btn '+(cropMode==='custom'?'active':'')+'" onclick="switchCropMode(\'custom\')">✏️ 手填菜品</button>'+
+    '</div>'+
+    '<div id="cropModeContent">'+(cropMode==='select'?selectContent:customContent)+'</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">使用设备</label>'+
+      '<select class="form-select" id="cropDevice">'+deviceOptionsHtml+'</select>'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">种植位置（如：第2层第3口）</label>'+
+      '<input class="form-input" id="cropLocation" placeholder="选填，方便定位" />'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">种植日期</label>'+
+      '<input class="form-input" id="cropDate" type="date" />'+
+    '</div>'+
+    '<button class="quick-btn hot" onclick="saveNewCrop()" style="width:100%;justify-content:center;padding:12px;font-size:15px">✅ 确认添加</button>';
+
+  document.getElementById('cropDate').value = new Date().toISOString().split('T')[0];
+}
+
+function switchCropMode(mode){
+  cropMode = mode;
+  renderAddCropSheet();
+}
+
+function autoMatchDays(){
+  var name = document.getElementById('customName').value.trim();
+  var hint = document.getElementById('matchHint');
+  var daysInput = document.getElementById('customDays');
+  if(!name){ hint.style.display='none'; return; }
+  // Try exact match first, then partial match
+  var matched = null;
+  for(var key in KB.cropDayMap){
+    if(name === key || name.indexOf(key) >= 0 || key.indexOf(name) >= 0){
+      matched = {name:key, days:KB.cropDayMap[key]};
+      break;
+    }
+  }
+  if(matched){
+    daysInput.value = matched.days;
+    hint.textContent = '已匹配「'+matched.name+'」标准生长周期：'+matched.days+'天';
+    hint.style.display = 'block';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+function selectCrop(idx){
+  document.querySelectorAll('.crop-option').forEach(function(el){el.classList.remove('selected')});
+  var el = document.querySelector('[data-crop="'+idx+'"]');
+  if(el) el.classList.add('selected');
+  selectedCropIdx = idx;
+}
+
+function saveNewCrop(){
+  var name, emoji, days;
+  if(cropMode === 'select'){
+    if(selectedCropIdx < 0){ showToast('请先选择菜品'); return; }
+    var crop = KB.crops[selectedCropIdx];
+    name = crop.name; emoji = crop.emoji; days = crop.days;
+  } else {
+    name = document.getElementById('customName').value.trim();
+    if(!name){ showToast('请输入菜品名'); return; }
+    emoji = document.getElementById('customEmoji').value || '🥬';
+    days = parseInt(document.getElementById('customDays').value) || 30;
+  }
+  var deviceCode = document.getElementById('cropDevice').value;
+  var device = KB.devices.find(function(d){return d.code===deviceCode});
+  var location = document.getElementById('cropLocation').value || '未指定';
+  var dateStr = document.getElementById('cropDate').value;
+  if(!dateStr){ showToast('请选择种植日期'); return; }
+
+  state.crops.push({
+    name: name,
+    emoji: emoji,
+    customDays: cropMode === 'custom' ? days : undefined,
+    device: device.name,
+    deviceCode: deviceCode,
+    location: location,
+    plantDate: new Date(dateStr).getTime(),
+    harvestLog: [],
+    logs: []
+  });
+  if(!state.startDate) state.startDate = new Date(dateStr).getTime();
+  saveState();
+  closeOverlay();
+  renderGarden();
+  switchView('chat');
+  aiSayLong('已添加 '+emoji+' '+name+'！\n\n我会从种植日期开始计算生长进度，每天提醒你该做什么。\n\n'+name+'的种植周期约'+days+'天，预计'+days+'天后可以采收。加油！🌱', 400);
+}
+
+// ====== Daily Log ======
+function openDailyLog(idx){
+  var c = state.crops[idx];
+  if(!c.logs) c.logs = [];
+  var dayNum = Math.floor((Date.now() - c.plantDate) / 86400000) + 1;
+
+  var logsHtml = c.logs.length === 0
+    ? '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">还没有日常记录<br>写下第一条吧~</div>'
+    : c.logs.slice().reverse().map(function(log){
+        var logDate = new Date(log.date);
+        var dateStr = (logDate.getMonth()+1)+'/'+logDate.getDate()+' '+logDate.getHours()+':'+String(logDate.getMinutes()).padStart(2,'0');
+        var logIdx = c.logs.indexOf(log);
+        return '<div class="log-entry">'+
+          '<div class="log-entry-head">'+
+            '<span class="log-entry-day">第'+log.day+'天</span>'+
+            '<span class="log-entry-date">'+dateStr+'</span>'+
+          '</div>'+
+          '<div class="log-entry-text">'+(log.text||'(无文字)')+'</div>'+
+          (log.photo ? '<img class="log-entry-photo" src="'+log.photo+'" alt="记录照片">' : '')+
+          '<div style="margin-top:6px;display:flex;gap:6px">'+
+            '<button class="order-action-btn" onclick="editDailyLog('+idx+','+logIdx+')">✏️ 编辑</button>'+
+            '<button class="order-action-btn" onclick="deleteDailyLog('+idx+','+logIdx+')">🗑️ 删除</button>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">📝 '+c.emoji+' '+c.name+' · 日常记录</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">今天是第'+dayNum+'天 · 记录每次变化，积累种植日记</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">今天的记录</label>'+
+      '<textarea class="form-input" id="logText" rows="3" placeholder="如：今天发芽了/长了真叶/补水了200ml..." style="resize:none"></textarea>'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">拍照记录（选填）</label>'+
+      '<input class="form-input" type="file" accept="image/*" capture="environment" id="logPhoto" />'+
+    '</div>'+
+    '<button class="quick-btn green" onclick="saveDailyLog('+idx+')" style="width:100%;justify-content:center;padding:12px">💾 保存记录</button>'+
+    '<div style="margin-top:16px">'+
+      '<div style="font-size:13px;font-weight:600;margin-bottom:8px">历史记录 ('+c.logs.length+')</div>'+
+      logsHtml+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function saveDailyLog(idx){
+  var c = state.crops[idx];
+  var text = document.getElementById('logText').value.trim();
+  var photoInput = document.getElementById('logPhoto');
+  var dayNum = Math.floor((Date.now() - c.plantDate) / 86400000) + 1;
+
+  if(!text && (!photoInput.files || !photoInput.files[0])){
+    showToast('写点什么或拍张照吧');
+    return;
+  }
+
+  if(photoInput.files && photoInput.files[0]){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      if(!c.logs) c.logs = [];
+      c.logs.push({date:Date.now(), day:dayNum, text:text, photo:e.target.result});
+      saveState();
+      closeOverlay();
+      renderGarden();
+      showToast('记录已保存 📝');
+    };
+    reader.readAsDataURL(photoInput.files[0]);
+  } else {
+    if(!c.logs) c.logs = [];
+    c.logs.push({date:Date.now(), day:dayNum, text:text, photo:null});
+    saveState();
+    closeOverlay();
+    renderGarden();
+    showToast('记录已保存 📝');
+  }
+}
+
+// ====== Edit / Delete Daily Log ======
+function editDailyLog(cropIdx, logIdx){
+  var c = state.crops[cropIdx];
+  if(!c.logs || !c.logs[logIdx]) return;
+  var log = c.logs[logIdx];
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">✏️ 编辑记录</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">第'+log.day+'天的记录</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">记录内容</label>'+
+      '<textarea class="form-input" id="editLogText" rows="3" placeholder="记录内容" style="resize:none">'+(log.text||'')+'</textarea>'+
+    '</div>'+
+    (log.photo ? '<div style="margin-bottom:10px"><img src="'+log.photo+'" alt="记录照片" style="width:100%;border-radius:8px"></div>' : '')+
+    '<div style="display:flex;gap:8px">'+
+      '<button class="quick-btn green" onclick="saveEditLog('+cropIdx+','+logIdx+')" style="flex:1;justify-content:center;padding:12px">💾 保存修改</button>'+
+      '<button class="quick-btn" onclick="openDailyLog('+cropIdx+')" style="flex:1;justify-content:center;padding:12px">取消</button>'+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function saveEditLog(cropIdx, logIdx){
+  var c = state.crops[cropIdx];
+  if(!c.logs || !c.logs[logIdx]) return;
+  var text = document.getElementById('editLogText').value.trim();
+  c.logs[logIdx].text = text;
+  saveState();
+  openDailyLog(cropIdx);
+  showToast('记录已更新 ✓');
+}
+
+function deleteDailyLog(cropIdx, logIdx){
+  var c = state.crops[cropIdx];
+  if(!c.logs || !c.logs[logIdx]) return;
+  if(confirm('确定删除这条记录吗？')){
+    c.logs.splice(logIdx, 1);
+    saveState();
+    openDailyLog(cropIdx);
+    showToast('记录已删除');
+  }
+}
+
+// ====== All Daily Logs (种植日记) ======
+function showAllDailyLogs(){
+  var allLogs = [];
+  state.crops.forEach(function(c, ci){
+    if(c.logs){
+      c.logs.forEach(function(log, li){
+        allLogs.push({cropIdx: ci, logIdx: li, crop: c, log: log});
+      });
+    }
+  });
+  allLogs.sort(function(a, b){ return b.log.date - a.log.date; });
+
+  var logsHtml;
+  if(allLogs.length === 0){
+    logsHtml = '<div style="text-align:center;padding:30px 20px;color:var(--muted);font-size:13px">'+
+      '<div style="font-size:36px;margin-bottom:10px">📝</div>'+
+      '还没有种植日记<br>去菜园里添加第一条记录吧~</div>';
+  } else {
+    logsHtml = allLogs.map(function(item){
+      var logDate = new Date(item.log.date);
+      var dateStr = (logDate.getMonth()+1)+'/'+logDate.getDate()+' '+logDate.getHours()+':'+String(logDate.getMinutes()).padStart(2,'0');
+      return '<div class="order-card" onclick="openDailyLog('+item.cropIdx+')" style="cursor:pointer">'+
+        '<div class="order-card-head">'+
+          '<span style="font-size:13px;font-weight:600">'+item.crop.emoji+' '+item.crop.name+' · 第'+item.log.day+'天</span>'+
+          '<span class="order-card-no">'+dateStr+'</span>'+
+        '</div>'+
+        '<div style="font-size:13px;line-height:1.5;padding:4px 0">'+(item.log.text||'(无文字)')+'</div>'+
+        (item.log.photo ? '<img src="'+item.log.photo+'" alt="记录照片" style="width:100%;border-radius:8px;margin-top:6px">' : '')+
+      '</div>';
+    }).join('');
+  }
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">📖 种植日记</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">所有菜品的日常记录，按时间倒序排列</div>'+
+    logsHtml;
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ====== Crop Content Generator ======
+function openCropContent(idx){
+  var c = state.crops[idx];
+  var cropInfo = KB.crops.find(function(k){return k.name===c.name}) || {days:c.customDays||30,emoji:c.emoji};
+  var dayNum = Math.floor((Date.now() - c.plantDate) / 86400000) + 1;
+  var progress = Math.min(dayNum / cropInfo.days * 100, 100);
+  var harvestCount = c.harvestLog ? c.harvestLog.length : 0;
+
+  var title, body;
+
+  if(progress < 30){
+    title = c.name+'种了'+dayNum+'天，终于发芽了！';
+    body = '从种子到发芽只用了'+dayNum+'天\n'+
+      '水培的好处就是干净、省心\n'+
+      '不用土、不用洗泥巴，根系白花花的一看就健康\n\n'+
+      '设备：'+c.device+'\n'+
+      '位置：'+c.location+'\n'+
+      '预计'+cropInfo.days+'天后可以采摘\n\n'+
+      '0农残、0激素、0催熟\n'+
+      '自己种的菜，吃着就是放心';
+  } else if(progress < 80){
+    title = c.name+'第'+dayNum+'天，长势喜人！水培真香';
+    body = '种了'+dayNum+'天了，'+c.name+'长得真好\n'+
+      '水培根系白白净净，没有泥巴没有虫\n'+
+      '每天只看看水位，偶尔补点营养液就行\n\n'+
+      '进度：'+Math.round(progress)+'%\n'+
+      '预计还有'+Math.max(1, Math.round((100-progress)/100*cropInfo.days))+'天可以采摘\n\n'+
+      '0农残、0激素、0重金属\n'+
+      '这就是数智农业的力量';
+  } else {
+    title = '种了'+dayNum+'天，'+c.name+'终于可以吃了！';
+    body = '等了'+dayNum+'天，'+c.name+'终于成熟了！\n'+
+      '剪下来直接下锅，不用洗泥巴\n'+
+      '0农残、0激素、0催熟、0重金属、0污染\n\n'+
+      '水培种菜最大的好处：\n'+
+      '✅ 干净 — 根系白净，不用洗\n'+
+      '✅ 安全 — 0农残有检测报告\n'+
+      '✅ 新鲜 — 现剪现吃，营养不流失\n'+
+      '✅ 省心 — AI提醒该做什么\n\n'+
+      '一家人的菜篮子，就在客厅里';
+  }
+
+  if(harvestCount > 0){
+    body += '\n\n已经采收了'+harvestCount+'次，每次都是现剪现吃';
+  }
+
+  var fullText = title + '\n\n' + body + '\n\n' + KB.contentTemplates.xhs;
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">✍️ '+c.emoji+' '+c.name+' · 自媒体文案</div>'+
+    '<div class="content-result">'+
+      '<div class="label">标题</div>'+
+      '<div style="font-weight:700;margin-bottom:8px">'+title+'</div>'+
+      '<div class="label">正文</div>'+
+      '<div>'+body.replace(/\n/g,'<br>')+'</div>'+
+      '<div class="label" style="margin-top:8px">话题</div>'+
+      '<div style="font-size:12px;color:var(--muted)">'+KB.contentTemplates.xhs+'</div>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;margin-top:12px">'+
+      '<button class="quick-btn green" onclick="copyText(this,\''+fullText.replace(/'/g,"\\'").replace(/\n/g,'\\n')+'\')" style="flex:1;justify-content:center">📋 复制全部</button>'+
+      '<button class="quick-btn hot" onclick="publishContent(\'xhs\',\''+fullText.replace(/'/g,"\\'").replace(/\n/g,'\\n')+'\')" style="flex:1;justify-content:center">📱 发小红书</button>'+
+    '</div>'+
+    '<button class="quick-btn" onclick="publishContent(\'dy\',\''+fullText.replace(/'/g,"\\'").replace(/\n/g,'\\n')+'\')" style="width:100%;justify-content:center;margin-top:8px">🎬 发抖音</button>'+
+    '<div style="margin-top:12px;padding:10px;background:var(--mint);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.5">'+
+      '💡 文案会根据'+c.name+'的种植进度自动生成。随着种植天数变化，文案内容也会不同。'+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function publishContent(platform, text){
+  text = text.replace(/\\n/g, '\n');
+  var platformName = platform === 'xhs' ? '小红书' : '抖音';
+  // 先复制到剪贴板
+  var copied = false;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){
+      copied = true;
+      showPublishGuide(platform, platformName, true);
+    }).catch(function(){
+      showPublishGuide(platform, platformName, false);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); copied = true; }catch(e){}
+    document.body.removeChild(ta);
+    showPublishGuide(platform, platformName, copied);
+  }
+}
+
+function showPublishGuide(platform, platformName, copied){
+  var step5 = platformName === '小红书' ? '发布！记得加上话题标签' : '发布！';
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">📱 发布到'+platformName+'</div>'+
+    '<div style="text-align:center;padding:20px 10px">'+
+      (copied
+        ? '<div style="font-size:48px;margin-bottom:10px">✅</div><div style="font-weight:700;font-size:16px;margin-bottom:6px">文案已复制到剪贴板！</div>'
+        : '<div style="font-size:48px;margin-bottom:10px">📋</div><div style="font-weight:700;font-size:16px;margin-bottom:6px">请手动复制文案</div>'
+      )+
+    '</div>'+
+    '<div style="background:var(--mint);padding:14px;border-radius:12px;margin-bottom:14px">'+
+      '<div style="font-size:13px;font-weight:700;margin-bottom:10px">📋 接下来按这个步骤操作：</div>'+
+      '<div style="font-size:13px;line-height:2">'+
+        '<b style="color:var(--green)">第1步</b> 打开'+platformName+'APP<br>'+
+        '<b style="color:var(--green)">第2步</b> 点底部「+」发布按钮<br>'+
+        '<b style="color:var(--green)">第3步</b> 选好照片/视频<br>'+
+        '<b style="color:var(--green)">第4步</b> 在标题和正文里<b>长按→粘贴</b><br>'+
+        '<b style="color:var(--green)">第5步</b> '+step5+
+      '</div>'+
+    '</div>'+
+    (copied ? '' : '<button class="quick-btn hot" onclick="copyPublishText()" style="width:100%;justify-content:center;padding:12px;margin-bottom:8px">📋 手动复制文案</button>')+
+    '<button class="quick-btn green" onclick="closeOverlay()" style="width:100%;justify-content:center;padding:12px">我知道了</button>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ====== Harvest / Edit / Delete ======
+function harvestCrop(idx){
+  var c = state.crops[idx];
+  var ci = KB.crops.find(function(k){return k.name===c.name}) || {days:c.customDays||30,emoji:'🥬'};
+  var dayNum = Math.floor((Date.now() - c.plantDate) / 86400000) + 1;
+  if(!c.harvestLog) c.harvestLog = [];
+
+  var harvestHtml = c.harvestLog.length === 0
+    ? '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">还没有采收记录<br>这是第一次采收~</div>'
+    : c.harvestLog.slice().reverse().map(function(h){
+        var d = new Date(h.date);
+        var dStr = (d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
+        return '<div class="log-entry">'+
+          '<div class="log-entry-head"><span class="log-entry-day">第'+h.day+'天采收</span><span class="log-entry-date">'+dStr+'</span></div>'+
+          '<div class="log-entry-text">'+(h.weight?'采摘约'+h.weight+'g':'已采收')+(h.note?' · '+h.note:'')+'</div>'+
+        '</div>';
+      }).join('');
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">🥬 '+ci.emoji+' '+c.name+' · 采收记录</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">今天是第'+dayNum+'天 · 累计采收'+c.harvestLog.length+'次</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">本次采摘重量（选填）</label>'+
+      '<input class="form-input" id="harvestWeight" type="number" placeholder="如：200（克）" />'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">备注（选填）</label>'+
+      '<input class="form-input" id="harvestNote" placeholder="如：够吃一顿火锅" />'+
+    '</div>'+
+    '<button class="quick-btn hot" onclick="confirmHarvest('+idx+')" style="width:100%;justify-content:center;padding:12px">✅ 确认采收</button>'+
+    '<div style="margin-top:16px">'+
+      '<div style="font-size:13px;font-weight:600;margin-bottom:8px">采收历史 ('+c.harvestLog.length+')</div>'+
+      harvestHtml+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function confirmHarvest(idx){
+  var c = state.crops[idx];
+  var dayNum = Math.floor((Date.now() - c.plantDate) / 86400000) + 1;
+  var weight = document.getElementById('harvestWeight').value.trim();
+  var note = document.getElementById('harvestNote').value.trim();
+  if(!c.harvestLog) c.harvestLog = [];
+  c.harvestLog.push({date: Date.now(), day: dayNum, weight: weight ? parseInt(weight) : null, note: note});
+  state.harvestCount++;
+  state.savedMoney += 15;
+  state.score = (state.score || 0) + 10;
+  saveState();
+  closeOverlay();
+  renderGarden();
+  showToast('采收已记录 🥬 省了¥15');
+  setTimeout(function(){
+    switchView('chat');
+    aiSayLong('🎉 采收成功！\n\n'+c.name+' 第'+dayNum+'天采收，这是你的第'+state.harvestCount+'次采收。\n\n'+(weight?'本次采摘约'+weight+'g，':'')+'省下买菜钱约¥15，累计省下¥'+state.savedMoney+'。\n\n0农残现摘现吃，真香！\n\n👉 水培菜是循环生长的，外叶摘了中心会继续长，不用重新播种。', 400);
+  }, 300);
+}
+
+// ====== Crop Wiki ======
+function showCalendar(){
+  var now = new Date();
+  var year = now.getFullYear();
+  var month = now.getMonth();
+  var today = now.getDate();
+
+  var firstDay = new Date(year, month, 1).getDay();
+  var daysInMonth = new Date(year, month+1, 0).getDate();
+  var weekDays = ['日','一','二','三','四','五','六'];
+
+  // Collect events by date
+  var events = {};
+  state.crops.forEach(function(c, idx){
+    var ci = KB.crops.find(function(k){return k.name===c.name}) || {emoji:'🥬'};
+    // Plant date
+    var pd = new Date(c.plantDate);
+    if(pd.getFullYear()===year && pd.getMonth()===month){
+      var d = pd.getDate();
+      if(!events[d]) events[d] = [];
+      events[d].push({type:'plant', text:'种了'+ci.emoji+c.name, color:'#2E7D32'});
+    }
+    // Logs
+    if(c.logs){
+      c.logs.forEach(function(log){
+        var ld = new Date(log.date);
+        if(ld.getFullYear()===year && ld.getMonth()===month){
+          var d = ld.getDate();
+          if(!events[d]) events[d] = [];
+          events[d].push({type:'log', text:ci.emoji+c.name+'记录', color:'#2F7DB8'});
+        }
+      });
+    }
+    // Harvests
+    if(c.harvestLog){
+      c.harvestLog.forEach(function(h){
+        var hd = new Date(h.date);
+        if(hd.getFullYear()===year && hd.getMonth()===month){
+          var d = hd.getDate();
+          if(!events[d]) events[d] = [];
+          events[d].push({type:'harvest', text:ci.emoji+c.name+'采收', color:'#FF8F00'});
+        }
+      });
+    }
+  });
+
+  // Build calendar grid
+  var cellsHtml = '';
+  weekDays.forEach(function(w){
+    cellsHtml += '<div style="text-align:center;font-size:12px;font-weight:600;color:var(--muted);padding:4px 0">'+w+'</div>';
+  });
+  for(var i=0;i<firstDay;i++){
+    cellsHtml += '<div></div>';
+  }
+  for(var d=1; d<=daysInMonth; d++){
+    var isToday = d === today;
+    var evs = events[d] || [];
+    var bg = isToday ? 'background:var(--mint);border:1px solid var(--green2)' : '';
+    var dotsHtml = evs.slice(0,3).map(function(e){
+      return '<div style="width:4px;height:4px;border-radius:50%;background:'+e.color+';display:inline-block;margin:0 1px"></div>';
+    }).join('');
+    var countBadge = evs.length > 0 ? '<span style="font-size:9px;color:var(--muted)">'+evs.length+'</span>' : '';
+    cellsHtml += '<div onclick="showDayDetail('+year+','+month+','+d+')" style="text-align:center;padding:6px 2px;border-radius:6px;cursor:'+(evs.length>0?'pointer':'default')+';'+bg+'">'+
+      '<div style="font-size:12px;'+(isToday?'color:var(--green);font-weight:700':'')+'">'+d+'</div>'+
+      (dotsHtml ? '<div style="margin-top:1px">'+dotsHtml+'</div>' : '')+
+      '</div>';
+  }
+
+  var legendHtml =
+    '<div style="display:flex;gap:12px;justify-content:center;margin-top:12px;font-size:11px;color:var(--muted)">'+
+    '<span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#2E7D32;margin-right:3px"></span>播种</span>'+
+    '<span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#2F7DB8;margin-right:3px"></span>记录</span>'+
+    '<span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#FF8F00;margin-right:3px"></span>采收</span>'+
+    '</div>';
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">📅 '+year+'年'+(month+1)+'月 种植日历</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">'+
+    cellsHtml+
+    '</div>'+
+    legendHtml+
+    '<div id="dayDetail" style="margin-top:14px"></div>';
+  document.getElementById('overlay').classList.add('show');
+
+  // Show today's detail by default
+  showDayDetail(year, month, today);
+}
+
+function showDayDetail(year, month, day){
+  var el = document.getElementById('dayDetail');
+  if(!el) return;
+  var date = new Date(year, month, day);
+  var dateStr = (month+1)+'月'+day+'日';
+  var dayEvents = [];
+
+  state.crops.forEach(function(c, idx){
+    var ci = KB.crops.find(function(k){return k.name===c.name}) || {emoji:'🥬'};
+    var pd = new Date(c.plantDate);
+    if(pd.getFullYear()===year && pd.getMonth()===month && pd.getDate()===day){
+      dayEvents.push({icon:'🌱', text:'种了 '+ci.emoji+' '+c.name, color:'#2E7D32'});
+    }
+    if(c.logs){
+      c.logs.forEach(function(log){
+        var ld = new Date(log.date);
+        if(ld.getFullYear()===year && ld.getMonth()===month && ld.getDate()===day){
+          dayEvents.push({icon:'📝', text:ci.emoji+c.name+'：'+(log.text||'(无文字记录)'), color:'#2F7DB8'});
+        }
+      });
+    }
+    if(c.harvestLog){
+      c.harvestLog.forEach(function(h){
+        var hd = new Date(h.date);
+        if(hd.getFullYear()===year && hd.getMonth()===month && hd.getDate()===day){
+          dayEvents.push({icon:'🥬', text:'采收 '+ci.emoji+c.name+(h.weight?' 约'+h.weight+'g':''), color:'#FF8F00'});
+        }
+      });
+    }
+  });
+
+  var html = '<div style="font-size:13px;font-weight:600;margin-bottom:8px">'+dateStr+'</div>';
+  if(dayEvents.length === 0){
+    html += '<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">这天没有记录</div>';
+  } else {
+    dayEvents.forEach(function(e){
+      html += '<div style="display:flex;gap:8px;padding:6px 8px;background:'+e.color+'10;border-radius:8px;margin-bottom:4px;font-size:12px">'+
+        '<span>'+e.icon+'</span><span style="flex:1;color:'+e.color+'">'+e.text+'</span></div>';
+    });
+  }
+  el.innerHTML = html;
+}
+
+
+function showCropWiki(idx){
+  var c = state.crops[idx];
+  var ci = KB.crops.find(function(k){return k.name===c.name}) || {days:c.customDays||30,emoji:'🥬',season:'四季',difficulty:'简单'};
+  var wiki = KB.cropWiki[c.name] || {temp:'15-25℃',light:'中等光照，每天8-10小时',ph:'5.5-6.5',tip:'保持水箱有水，营养液按标准配比添加。定期检查根系，白根为健康，发黄发褐需换水。'};
+  var dayNum = Math.floor((Date.now() - c.plantDate) / 86400000) + 1;
+  var progress = Math.min(dayNum / ci.days * 100, 100);
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">📖 '+ci.emoji+' '+c.name+' · 种植百科</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'+
+      '<div style="background:var(--mint);padding:12px;border-radius:10px;text-align:center">'+
+        '<div style="font-size:20px;font-weight:700;color:var(--green)">'+ci.days+'天</div>'+
+        '<div style="font-size:11px;color:var(--muted)">生长周期</div>'+
+      '</div>'+
+      '<div style="background:#FFF3E0;padding:12px;border-radius:10px;text-align:center">'+
+        '<div style="font-size:20px;font-weight:700;color:var(--amber)">'+ci.difficulty+'</div>'+
+        '<div style="font-size:11px;color:var(--muted)">种植难度</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="dev-detail-row"><b>适宜温度</b><span>'+wiki.temp+'</span></div>'+
+    '<div class="dev-detail-row"><b>光照需求</b><span>'+wiki.light+'</span></div>'+
+    '<div class="dev-detail-row"><b>pH范围</b><span>'+wiki.ph+'</span></div>'+
+    '<div class="dev-detail-row"><b>适合季节</b><span>'+ci.season+'</span></div>'+
+    '<div class="dev-detail-row"><b>当前进度</b><span>第'+dayNum+'天 / '+ci.days+'天 ('+Math.round(progress)+'%)</span></div>'+
+    '<div style="background:var(--mint);padding:14px;border-radius:10px;margin-top:14px;font-size:13px;line-height:1.7">'+
+      '💡 <b>种植要点</b><br>'+wiki.tip+
+    '</div>'+
+    '<div style="background:#E3F2FD;padding:14px;border-radius:10px;margin-top:10px;font-size:13px;line-height:1.7">'+
+      '🧪 <b>营养液配比</b><br>'+
+      '标准配比：每1L水加A液5ml+B液5ml<br>'+
+      '苗期（1-10天）：半量，每1L水加A液2.5ml+B液2.5ml<br>'+
+      '生长期（10天+）：全量，每1L水加A液5ml+B液5ml<br>'+
+      '换水周期：7-10天换一次全箱水'+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function editCrop(idx){
+  var c = state.crops[idx];
+  var deviceOptionsHtml = KB.devices.map(function(d){
+    return '<option value="'+d.code+'"'+(d.code===c.deviceCode?' selected':'')+'>'+d.name+' ('+d.ports+'口/¥'+d.price+')</option>';
+  }).join('');
+  var dateStr = new Date(c.plantDate).toISOString().split('T')[0];
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">✏️ 编辑菜品</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">菜品名称</label>'+
+      '<input class="form-input" id="editName" value="'+c.name+'" />'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">使用设备</label>'+
+      '<select class="form-select" id="editDevice">'+deviceOptionsHtml+'</select>'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">种植位置</label>'+
+      '<input class="form-input" id="editLocation" value="'+c.location+'" />'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">种植日期</label>'+
+      '<input class="form-input" id="editDate" type="date" value="'+dateStr+'" />'+
+    '</div>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button class="quick-btn hot" onclick="saveEditCrop('+idx+')" style="flex:1;justify-content:center;padding:12px">💾 保存</button>'+
+      '<button class="quick-btn danger" onclick="deleteCrop('+idx+')" style="flex:1;justify-content:center;padding:12px">🗑️ 删除</button>'+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function saveEditCrop(idx){
+  var c = state.crops[idx];
+  c.name = document.getElementById('editName').value || c.name;
+  var deviceCode = document.getElementById('editDevice').value;
+  var device = KB.devices.find(function(d){return d.code===deviceCode});
+  c.device = device.name;
+  c.deviceCode = deviceCode;
+  c.location = document.getElementById('editLocation').value || '未指定';
+  var dateStr = document.getElementById('editDate').value;
+  if(dateStr) c.plantDate = new Date(dateStr).getTime();
+  saveState();
+  closeOverlay();
+  renderGarden();
+  showToast('已保存修改');
+}
+
+function deleteCrop(idx){
+  if(confirm('确定删除这个菜品记录吗？')){
+    state.crops.splice(idx, 1);
+    saveState();
+    closeOverlay();
+    renderGarden();
+    showToast('已删除');
+  }
+}
+
+// ====== Shop Rendering ======
+function renderShop(filter){
+  filter = filter || 'all';
+  var listEl = document.getElementById('shopList');
+  var devices = filter === 'all' ? KB.devices : KB.devices.filter(function(d){return d.cat === filter});
+  listEl.innerHTML = devices.map(function(d, i){
+    return renderDeviceCard(d, false, i);
+  }).join('');
+}
+
+function renderDeviceCard(d, inChat, idx){
+  var idxAttr = idx !== undefined ? 'data-idx="'+idx+'"' : '';
+
+  var galleryHtml = '';
+  if(d.gallery && d.gallery.length > 0){
+    galleryHtml = '<div class="dev-gallery">'+
+      d.gallery.map(function(g){
+        return '<div class="dev-gallery-item" onclick="openImageViewer(\''+g.src+'\',\''+g.label+'\')">'+
+          '<img src="'+g.src+'" alt="'+g.label+'">'+
+        '</div>';
+      }).join('')+
+    '</div>';
+  }
+
+  var standardA = d.tank * 5;
+  var standardB = d.tank * 5;
+  var monthlyWater = d.tank * 2;
+  var monthlyA = monthlyWater * 5;
+  var monthlySets = Math.ceil(monthlyA / KB.nutrientSet.aMl);
+  var monthlyNutrientCost = monthlySets * KB.nutrientSet.retail;
+
+  var dailyMature = d.ports / 30;
+  var monthlyHarvest = d.code === 'M' ? 0 : d.ports;
+  var mealPlants = 6;
+  var monthlyMeals = monthlyHarvest ? Math.max(1, Math.floor(monthlyHarvest / mealPlants)) : 0;
+  var mealInterval = monthlyMeals ? Math.max(1, Math.ceil(30 / monthlyMeals)) : 0;
+  var cycleText = d.code === 'M'
+    ? '1个种植口更适合花草和小型香草，不承担家庭叶菜循环。'
+    : '按30天成熟周期粗算，'+d.ports+'个种植口满负荷轮作后平均每天约成熟'+Math.floor(dailyMature)+'棵叶菜。';
+  var yieldText = d.code === 'M'
+    ? 'M系列主打花草/香草体验，不建议按家庭吃菜产量计算。'
+    : '按一顿约'+mealPlants+'棵叶菜粗算，满负荷循环后每月约成熟'+monthlyHarvest+'棵，约够'+monthlyMeals+'顿叶菜，平均约'+mealInterval+'天能吃一顿。';
+  var healthText = '无土无虫、过程可记录、按需现摘，减少外购蔬菜在来源、运输、保存和农残信息上的不确定性。';
+  var nextText = d.code === 'S'
+    ? '适合先跑通新手体验；想一家人长期每天吃菜，建议继续算D/T/F。'
+    : d.code === 'T'
+      ? '接近家庭连续补给，适合验证每天播种、30天后持续采摘。'
+      : d.code === 'F'
+        ? '更适合花果、草莓和展示型，叶菜循环能力强但果类周期更长。'
+        : d.code === 'M'
+          ? '适合先让用户喜欢上种植，后续再升级到S/D/T/F。'
+          : '适合从体验升级到家庭多品种循环。';
+
+  return '<div class="dev-card" '+idxAttr+'>'+
+    '<div class="dev-img-wrap" onclick="openDeviceDetail(\''+d.code+'\')" style="cursor:pointer">'+
+      '<img src="'+d.image+'" alt="'+d.name+'">'+
+      '<div class="dev-img-badge">'+d.imageLabel+'</div>'+
+    '</div>'+
+    '<div class="dev-head">'+
+      '<span class="dev-name">'+d.name+'</span>'+
+      '<span><span class="dev-price">¥'+d.price+'</span><span class="dev-old-price">¥'+d.old+'</span></span>'+
+    '</div>'+
+    '<div class="dev-desc">'+d.desc+'</div>'+
+    '<div class="dev-tags">'+d.tags.map(function(t){return '<span class="dev-tag">'+t+'</span>'}).join('')+'</div>'+
+    '<div class="dev-specs">'+
+      '<div class="dev-spec"><b>种植口</b>'+d.ports+'口</div>'+
+      '<div class="dev-spec"><b>水箱</b>'+d.tank+'L</div>'+
+      '<div class="dev-spec"><b>月产出</b>'+(d.code==='M'?'花草体验':monthlyHarvest+'棵')+'</div>'+
+    '</div>'+
+    galleryHtml+
+    '<div class="dev-detail-toggle" onclick="this.nextElementSibling.classList.toggle(\'show\')">📋 查看完整参数 ▾</div>'+
+    '<div class="dev-detail-body">'+
+      '<div class="dev-detail-row"><b>适合人群</b><span>'+d.fit+'</span></div>'+
+      '<div class="dev-detail-row"><b>不适合</b><span>'+d.avoid+'</span></div>'+
+      '<div class="dev-detail-row"><b>能种什么</b><span>'+d.grow+'</span></div>'+
+      '<div class="dev-detail-row"><b>循环能力</b><span>'+cycleText+'</span></div>'+
+      '<div class="dev-detail-row"><b>月产出预估</b><span>'+yieldText+'</span></div>'+
+      '<div class="dev-detail-row"><b>补给用量</b><span>标准配比5L水=A液25ml+B液25ml。'+d.tank+'L水箱满箱约A液'+standardA+'ml+B液'+standardB+'ml，一套约可补'+(KB.nutrientSet.aMl/standardA).toFixed(1)+'箱。月补约'+monthlySets+'套，参考¥'+monthlyNutrientCost.toFixed(1)+'。</span></div>'+
+      '<div class="dev-detail-row"><b>健康差异</b><span>'+healthText+'</span></div>'+
+      '<div class="dev-detail-row"><b>规格参数</b><span>'+d.spec+'</span></div>'+
+      '<div class="dev-detail-row"><b>包装清单</b><span>'+d.packageList+'</span></div>'+
+      '<div class="dev-detail-row"><b>控制方式</b><span>'+d.control+'</span></div>'+
+      '<div class="dev-detail-row"><b>包装尺寸</b><span>'+d.shipping+'</span></div>'+
+      '<div class="dev-detail-row"><b>AI判断</b><span>'+nextText+'</span></div>'+
+    '</div>'+
+    '<div style="margin-top:10px;display:flex;gap:8px">'+
+      '<button class="quick-btn hot" onclick="buyDevice(\''+d.code+'\')" style="flex:1;justify-content:center">🛒 选这台</button>'+
+      '<button class="quick-btn green" onclick="askAboutDevice(\''+d.code+'\')" style="flex:1;justify-content:center">🤖 问问AI</button>'+
+    '</div>'+
+  '</div>';
+}
+
+function filterShop(cat, btn){
+  document.querySelectorAll('.shop-filter-btn').forEach(function(el){el.classList.remove('active')});
+  btn.classList.add('active');
+  renderShop(cat);
+}
+
+// ====== Compare Panel ======
+function openComparePanel(){
+  var threeWayHtml = KB.compare.threeWay.map(function(c){
+    return '<div class="compare-card-item '+c.type+'"><strong>'+c.title+'</strong><span>'+c.desc+'</span></div>';
+  }).join('');
+  
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">📊 三方对比</div>'+
+    '<div style="font-size:13px;color:var(--muted);margin-bottom:12px;text-align:center">外购蔬菜 · 自己土培 · 家庭无土水培</div>'+
+    '<div class="compare-cards">'+threeWayHtml+'</div>'+
+    '<table class="compare-table" style="margin-top:14px">'+
+    '<tr><th>对比项</th><th>水培 ✅</th><th>土培 ⚠️</th></tr>'+
+    KB.compare.points.map(function(p){
+      return '<tr><td>'+p[0]+'</td><td class="highlight">'+p[1]+'</td><td>'+p[2]+'</td></tr>';
+    }).join('')+
+    '</table>'+
+    '<div style="margin-top:14px;padding:12px;background:var(--mint);border-radius:10px;font-size:12px;line-height:1.6">'+
+    '💡 <b>数智农业5个0</b><br>'+
+    '✅ 0农残 — 无土室内种植，0农药0化肥残留<br>'+
+    '✅ 0激素 — 不使用任何植物激素<br>'+
+    '✅ 0催熟 — 到该摘的时候再摘<br>'+
+    '✅ 0重金属 — 重金属降低98%<br>'+
+    '✅ 0污染 — 室内种植隔绝外部污染<br><br>'+
+    '水培不是"不用土"这么简单，是从根上解决了食品安全问题。'+
+    '</div>'+
+    '<button class="quick-btn green" onclick="closeOverlay();switchView(\'chat\');setTimeout(function(){userAction(\'compare\')},300)" style="width:100%;justify-content:center;margin-top:14px;padding:12px">💬 在对话中讨论</button>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ====== Device Detail ======
+function openDeviceDetail(code){
+  var d = KB.devices.find(function(x){return x.code===code});
+  if(!d) return;
+
+  var galleryHtml = '';
+  if(d.gallery && d.gallery.length > 0){
+    galleryHtml = '<div class="dev-gallery" style="margin-top:12px">'+
+      d.gallery.map(function(g){
+        return '<div class="dev-gallery-item" onclick="openImageViewer(\''+g.src+'\',\''+g.label+'\')" style="width:100px;height:100px">'+
+          '<img src="'+g.src+'" alt="'+g.label+'">'+
+        '</div>';
+      }).join('')+
+    '</div>';
+  }
+
+  var standardA = d.tank * 5;
+  var monthlyWater = d.tank * 2;
+  var monthlyA = monthlyWater * 5;
+  var monthlySets = Math.ceil(monthlyA / KB.nutrientSet.aMl);
+  var monthlyNutrientCost = monthlySets * KB.nutrientSet.retail;
+  var monthlyHarvest = d.code === 'M' ? 0 : d.ports;
+  var mealPlants = 6;
+  var monthlyMeals = monthlyHarvest ? Math.max(1, Math.floor(monthlyHarvest / mealPlants)) : 0;
+  var mealInterval = monthlyMeals ? Math.max(1, Math.ceil(30 / monthlyMeals)) : 0;
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">📦 '+d.name+'</div>'+
+    '<div class="dev-img-wrap" style="margin-bottom:12px">'+
+      '<img src="'+d.image+'" alt="'+d.name+'">'+
+      '<div class="dev-img-badge">'+d.imageLabel+'</div>'+
+    '</div>'+
+    '<div class="dev-head">'+
+      '<span class="dev-name">'+d.name+'</span>'+
+      '<span><span class="dev-price">¥'+d.price+'</span><span class="dev-old-price">¥'+d.old+'</span></span>'+
+    '</div>'+
+    '<div class="dev-desc" style="margin-top:4px">'+d.desc+'</div>'+
+    '<div class="dev-tags" style="margin-top:8px">'+d.tags.map(function(t){return '<span class="dev-tag">'+t+'</span>'}).join('')+'</div>'+
+    '<div class="dev-specs" style="margin-top:8px">'+
+      '<div class="dev-spec"><b>种植口</b>'+d.ports+'口</div>'+
+      '<div class="dev-spec"><b>水箱</b>'+d.tank+'L</div>'+
+      '<div class="dev-spec"><b>月产出</b>'+(d.code==='M'?'花草体验':monthlyHarvest+'棵')+'</div>'+
+    '</div>'+
+    galleryHtml+
+    '<div style="margin-top:12px">'+
+      '<div class="dev-detail-row"><b>适合人群</b><span>'+d.fit+'</span></div>'+
+      '<div class="dev-detail-row"><b>不适合</b><span>'+d.avoid+'</span></div>'+
+      '<div class="dev-detail-row"><b>能种什么</b><span>'+d.grow+'</span></div>'+
+      '<div class="dev-detail-row"><b>规格参数</b><span>'+d.spec+'</span></div>'+
+      '<div class="dev-detail-row"><b>包装清单</b><span>'+d.packageList+'</span></div>'+
+      '<div class="dev-detail-row"><b>控制方式</b><span>'+d.control+'</span></div>'+
+      '<div class="dev-detail-row"><b>包装尺寸</b><span>'+d.shipping+'</span></div>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;margin-top:16px">'+
+      '<button class="quick-btn hot" onclick="buyDevice(\''+d.code+'\')" style="flex:1;justify-content:center;padding:12px">🛒 选这台</button>'+
+      '<button class="quick-btn green" onclick="askAboutDevice(\''+d.code+'\')" style="flex:1;justify-content:center;padding:12px">🤖 问问AI</button>'+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ====== Buy Device (Purchase Panel) ======
+function buyDevice(code){
+  var d = KB.devices.find(function(x){return x.code===code});
+  if(!d) return;
+
+  // 已保存的地址
+  if(!state.addresses) state.addresses = [];
+  var addrOptions = state.addresses.length > 0
+    ? state.addresses.map(function(a, i){
+        return '<option value="'+i+'"'+(a.default?' selected':'')+'>'+a.name+' · '+(a.region||'')+a.detail+'</option>';
+      }).join('')
+    : '<option value="">请先添加收货地址</option>';
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">🛒 确认订单</div>'+
+    '<div class="purchase-summary">'+
+      '<img src="'+d.image+'" alt="'+d.name+'">'+
+      '<div class="info">'+
+        '<strong>'+d.name+'</strong>'+
+        '<div style="font-size:12px;color:var(--muted);margin-top:2px">'+d.ports+'口 / '+d.tank+'L水箱</div>'+
+        '<div style="margin-top:4px"><span class="price">¥'+d.price+'</span> <span class="old">¥'+d.old+'</span></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">收件人姓名</label>'+
+      '<input class="form-input" id="purchaseName" placeholder="收件人姓名" />'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">手机号</label>'+
+      '<input class="form-input" id="purchasePhone" placeholder="手机号" type="tel" />'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">省/市/区</label>'+
+      '<input class="form-input" id="purchaseRegion" placeholder="如：江苏省南京市雨花台区" />'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">详细地址</label>'+
+      '<input class="form-input" id="purchaseAddress" placeholder="街道+门牌号" />'+
+    '</div>'+
+    (state.addresses.length > 0 ?
+      '<div class="form-group">'+
+        '<label class="form-label">或选择已保存地址</label>'+
+        '<select class="form-select" id="savedAddrSelect" onchange="fillPurchaseAddr()"><option value="">- 手动填写 -</option>'+addrOptions+'</select>'+
+      '</div>' : ''
+    )+
+    '<div class="purchase-price-row">'+
+      '<span class="lbl">实付金额</span>'+
+      '<span class="val">¥'+d.price+'</span>'+
+    '</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">'+
+      '✅ 包邮 · 7天无理由退换 · 含全套配件<br>'+
+      '✅ 首批种子+营养液赠送<br>'+
+      '✅ AI种植管家全程指导'+
+    '</div>'+
+    '<button class="quick-btn hot" onclick="confirmPurchase(\''+d.code+'\')" style="width:100%;justify-content:center;padding:14px;font-size:16px">✅ 确认下单</button>'+
+    '<button class="quick-btn green" onclick="askAboutDevice(\''+d.code+'\')" style="width:100%;justify-content:center;margin-top:8px">🤖 先问问AI</button>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function fillPurchaseAddr(){
+  var sel = document.getElementById('savedAddrSelect');
+  if(!sel || !sel.value) return;
+  var a = state.addresses[parseInt(sel.value)];
+  if(!a) return;
+  document.getElementById('purchaseName').value = a.name || '';
+  document.getElementById('purchasePhone').value = a.phone || '';
+  document.getElementById('purchaseRegion').value = a.region || '';
+  document.getElementById('purchaseAddress').value = a.detail || '';
+}
+
+function confirmPurchase(code){
+  var d = KB.devices.find(function(x){return x.code===code});
+  if(!d) return;
+  var name = document.getElementById('purchaseName').value.trim();
+  var phone = document.getElementById('purchasePhone').value.trim();
+  var region = document.getElementById('purchaseRegion').value.trim();
+  var address = document.getElementById('purchaseAddress').value.trim();
+  if(!name){ showToast('请填写收件人姓名'); return; }
+  if(!phone){ showToast('请填写手机号'); return; }
+  if(!address){ showToast('请填写收货地址'); return; }
+  var fullAddress = (region ? region : '') + address;
+
+  if(!state.devices) state.devices = [];
+  state.devices.push({
+    code: d.code, name: d.name, price: d.price,
+    ports: d.ports, tank: d.tank, date: Date.now()
+  });
+  if(!state.orders) state.orders = [];
+  state.orders.push({
+    code: d.code, name: d.name, price: d.price,
+    name: name, address: fullAddress, phone: phone, date: Date.now(), status: 'pending'
+  });
+  saveState();
+  closeOverlay();
+  // 下单后直接跳到订单列表
+  showToast('订单已提交！');
+  setTimeout(function(){ switchView('mine'); showOrderList('pending'); }, 300);
+  switchView('chat');
+  aiSayLong(
+    '🎉 订单已提交！\n\n'+
+    d.name+' ¥'+d.price+'\n'+
+    '收件人：'+name+'\n'+
+    '收货地址：'+fullAddress+'\n'+
+    '联系电话：'+phone+'\n\n'+
+    '我们会尽快安排发货。收到设备后告诉我，我帮你：\n'+
+    '1. 制定第一批种植计划\n'+
+    '2. 推荐适合的菜品和错峰种植方案\n'+
+    '3. 设置每天AI提醒\n\n'+
+    '👉 点击底部「我的」→「待付款」可以查看订单。', 500
+  );
+}
+
+function askAboutDevice(code){
+  closeOverlay();
+  switchView('chat');
+  var d = KB.devices.find(function(x){return x.code===code});
+  if(d){
+    userSay('帮我介绍一下'+d.name);
+    aiSayLong(
+      d.name+'，¥'+d.price+'（原价¥'+d.old+'）。\n\n'+
+      d.ports+'口种植位，'+d.tank+'L水箱。\n\n'+
+      d.desc+'\n\n'+
+      '<b>适合人群：</b>'+d.fit+'\n\n'+
+      '<b>能种什么：</b>'+d.grow+'\n\n'+
+      '<b>补给规则：</b>'+d.supply+'\n\n'+
+      '要不要选这台？买完我帮你设置种植计划。', 500
+    );
+  }
+}
+
+// ====== Mine Rendering ======
+function renderMine(){
+  var deviceCount = state.devices ? state.devices.length : 0;
+  var cropCount = state.crops.length;
+  var score = state.score || (cropCount * 10 + state.harvestCount * 5);
+  document.getElementById('mineDevices').textContent = deviceCount + '台';
+  document.getElementById('mineCrops').textContent = cropCount + '种';
+  document.getElementById('mineScore').textContent = score;
+  document.getElementById('healthScore').textContent = Math.min(100, 60 + score);
+
+  // Stats summary
+  var totalDays = 0;
+  if(state.startDate){
+    totalDays = Math.floor((Date.now() - state.startDate) / 86400000) + 1;
+  } else if(state.crops.length > 0){
+    totalDays = Math.floor((Date.now() - Math.min.apply(null, state.crops.map(function(c){return c.plantDate}))) / 86400000) + 1;
+  }
+  var totalLogs = state.crops.reduce(function(s,c){return s + (c.logs?c.logs.length:0)}, 0);
+  var totalHarvests = state.crops.reduce(function(s,c){return s + (c.harvestLog?c.harvestLog.length:0)}, 0);
+  var statsEl = document.getElementById('statsSummary');
+  if(statsEl){
+    statsEl.innerHTML =
+      '<div class="mine-stat" style="background:var(--mint2);text-align:center;padding:10px"><strong style="font-size:20px;color:var(--green)">'+totalDays+'</strong><span style="font-size:11px">种植天数</span></div>'+
+      '<div class="mine-stat" style="background:var(--mint2);text-align:center;padding:10px"><strong style="font-size:20px;color:var(--amber)">'+totalHarvests+'</strong><span style="font-size:11px">采收次数</span></div>'+
+      '<div class="mine-stat" style="background:var(--mint2);text-align:center;padding:10px"><strong style="font-size:20px;color:var(--blue)">¥'+state.savedMoney+'</strong><span style="font-size:11px">省了买菜钱</span></div>'+
+      '<div class="mine-stat" style="background:var(--mint2);text-align:center;padding:10px"><strong style="font-size:20px;color:#7E57C2">'+totalLogs+'</strong><span style="font-size:11px">种植记录</span></div>';
+  }
+
+  var deviceListEl = document.getElementById('mineDeviceList');
+  if(deviceCount === 0){
+    var usedDevices = {};
+    state.crops.forEach(function(c){
+      if(c.deviceCode) usedDevices[c.deviceCode] = c.device;
+    });
+    var usedKeys = Object.keys(usedDevices);
+    if(usedKeys.length > 0){
+      deviceListEl.innerHTML = usedKeys.map(function(code){
+        var d = KB.devices.find(function(x){return x.code===code});
+        return '<div class="mine-list-item">'+
+          '<div class="info"><strong>'+usedDevices[code]+'</strong><span>'+(d?d.ports+'口/'+d.tank+'L水箱':'')+'</span></div>'+
+          '<button class="quick-btn green" onclick="showDeviceManage(\''+code+'\')">管理</button>'+
+        '</div>';
+      }).join('');
+    } else {
+      deviceListEl.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0">还没有绑定设备，去商城选一台吧</div>';
+    }
+  } else {
+    deviceListEl.innerHTML = state.devices.map(function(dd){
+      return '<div class="mine-list-item">'+
+        '<div class="info"><strong>'+dd.name+'</strong><span>'+dd.ports+'口/'+dd.tank+'L水箱 · '+new Date(dd.date).toLocaleDateString()+'</span></div>'+
+        '<button class="quick-btn green" onclick="showDeviceManage(\''+dd.code+'\')">管理</button>'+
+      '</div>';
+    }).join('');
+  }
+
+  // Order badges
+  var orders = state.orders || [];
+  var counts = {pending:0, paid:0, shipped:0, done:0};
+  orders.forEach(function(o){ if(counts[o.status]!==undefined) counts[o.status]++; });
+  ['pending','paid','shipped','done'].forEach(function(st){
+    var badge = document.getElementById('badge-'+st);
+    if(badge){
+      if(counts[st] > 0){
+        badge.textContent = counts[st];
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  });
+
+  // Recent orders preview
+  var recentEl = document.getElementById('recentOrders');
+  if(recentEl){
+    if(orders.length === 0){
+      recentEl.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0;text-align:center">暂无订单，去商城看看吧~</div>';
+    } else {
+      var recent = orders.slice().reverse().slice(0, 2);
+      recentEl.innerHTML = recent.map(function(o){
+        var realIdx = orders.indexOf(o);
+        var stInfo = orderStatusMap[o.status] || {label:'未知',color:'#999'};
+        return '<div class="order-card" style="padding:10px;margin-bottom:8px" onclick="showOrderDetail('+realIdx+')">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center">'+
+            '<strong style="font-size:13px">'+o.name+'</strong>'+
+            '<span style="font-size:11px;color:'+stInfo.color+';background:'+stInfo.color+'15;padding:2px 8px;border-radius:8px">'+stInfo.label+'</span>'+
+          '</div>'+
+          '<div style="font-size:12px;color:var(--muted);margin-top:4px">¥'+o.price+' · '+new Date(o.date).toLocaleDateString()+'</div>'+
+        '</div>';
+      }).join('');
+    }
+  }
+}
+
+// ====== Order List ======
+var orderStatusMap = {
+  pending: {label:'待付款', color:'#FF8F00', icon:'¥'},
+  paid:    {label:'待发货', color:'#2F7DB8', icon:'□'},
+  shipped: {label:'待收货', color:'#7E57C2', icon:'→'},
+  done:    {label:'已完成', color:'#2E7D32', icon:'✓'}
+};
+
+function showOrderList(filter){
+  filter = filter || 'all';
+  var orders = state.orders || [];
+  var filtered = filter === 'all' ? orders : orders.filter(function(o){return o.status === filter});
+
+  var statusLabel = filter === 'all' ? '全部订单' : (orderStatusMap[filter] ? orderStatusMap[filter].label : '订单');
+
+  var listHtml;
+  if(filtered.length === 0){
+    listHtml = '<div style="text-align:center;padding:30px 20px;color:var(--muted);font-size:13px">'+
+      '<div style="font-size:36px;margin-bottom:10px">📦</div>'+
+      '暂无'+statusLabel+'<br>'+
+      (filter === 'all' ? '去商城选一台设备吧~' : '去商城下单后这里会显示')+
+      '</div>';
+  } else {
+    listHtml = filtered.slice().reverse().map(function(o, i){
+      var realIdx = orders.indexOf(o);
+      var d = KB.devices.find(function(x){return x.code===o.code});
+      var stInfo = orderStatusMap[o.status] || {label:'未知',color:'#999',icon:'?'};
+      var dateStr = new Date(o.date).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      var imgSrc = d ? d.image : '';
+      return '<div class="order-card">'+
+        '<div class="order-card-head">'+
+          '<span class="order-card-no">订单号: '+String(o.date).slice(-8)+'</span>'+
+          '<span class="order-card-status" style="color:'+stInfo.color+';background:'+stInfo.color+'15">'+stInfo.label+'</span>'+
+        '</div>'+
+        '<div class="order-card-body">'+
+          (imgSrc ? '<img src="'+imgSrc+'" alt="'+o.name+'">' : '<div class="order-card-img-ph">'+(d?d.code:'?')+'</div>')+
+          '<div class="order-card-info">'+
+            '<strong>'+o.name+'</strong>'+
+            '<span>'+o.ports+'口 / '+o.tank+'L水箱</span>'+
+            '<span style="color:var(--green);font-weight:600">¥'+o.price+'</span>'+
+            '<span style="font-size:11px;color:var(--muted)">'+dateStr+'</span>'+
+          '</div>'+
+        '</div>'+
+        '<div class="order-card-actions">'+
+          (o.status==='pending' ? '<button class="order-action-btn hot" onclick="payOrder('+realIdx+')">立即付款</button>' : '')+
+          (o.status==='shipped' ? '<button class="order-action-btn hot" onclick="confirmReceive('+realIdx+')">确认收货</button>' : '')+
+          (o.status==='done' ? '<button class="order-action-btn" onclick="showToast(\'再次购买\')">再次购买</button>' : '')+
+          '<button class="order-action-btn" onclick="showOrderDetail('+realIdx+')">查看详情</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">🛍️ '+statusLabel+' ('+filtered.length+')</div>'+
+    listHtml+
+    (orders.length > 0 ? '<button class="quick-btn green" onclick="closeOverlay();switchView(\'shop\')" style="width:100%;justify-content:center;margin-top:12px">继续选购</button>' : '');
+  document.getElementById('overlay').classList.add('show');
+}
+
+function showOrderDetail(idx){
+  var o = (state.orders || [])[idx];
+  if(!o) return;
+  var d = KB.devices.find(function(x){return x.code===o.code});
+  var stInfo = orderStatusMap[o.status] || {label:'未知',color:'#999'};
+  var dateStr = new Date(o.date).toLocaleString('zh-CN');
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">订单详情</div>'+
+    '<div style="background:var(--mint);padding:12px;border-radius:10px;margin-bottom:12px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center">'+
+        '<span style="font-weight:600">订单状态</span>'+
+        '<span style="color:'+stInfo.color+';font-weight:600">'+stInfo.label+'</span>'+
+      '</div>'+
+    '</div>'+
+    '<div class="dev-detail-row"><b>商品</b><span>'+(d?d.name:o.name)+'</span></div>'+
+    '<div class="dev-detail-row"><b>规格</b><span>'+o.ports+'口 / '+o.tank+'L水箱</span></div>'+
+    '<div class="dev-detail-row"><b>单价</b><span>¥'+o.price+'</span></div>'+
+    '<div class="dev-detail-row"><b>收货地址</b><span>'+o.address+'</span></div>'+
+    '<div class="dev-detail-row"><b>联系电话</b><span>'+o.phone+'</span></div>'+
+    '<div class="dev-detail-row"><b>下单时间</b><span>'+dateStr+'</span></div>'+
+    '<div class="dev-detail-row"><b>订单编号</b><span>'+String(o.date).slice(-12)+'</span></div>'+
+    '<div style="margin-top:12px;display:flex;gap:8px">'+
+      (o.status==='pending' ? '<button class="quick-btn hot" onclick="payOrder('+idx+')" style="flex:1;justify-content:center">立即付款</button>' : '')+
+      (o.status==='shipped' ? '<button class="quick-btn hot" onclick="confirmReceive('+idx+')" style="flex:1;justify-content:center">确认收货</button>' : '')+
+      '<button class="quick-btn green" onclick="showToast(\'联系客服\')" style="flex:1;justify-content:center">联系客服</button>'+
+    '</div>';
+}
+
+function payOrder(idx){
+  var o = (state.orders || [])[idx];
+  if(!o) return;
+  o.status = 'paid';
+  saveState();
+  closeOverlay();
+  showToast('付款成功！等待发货');
+  setTimeout(function(){ showOrderList('paid'); }, 500);
+}
+
+function confirmReceive(idx){
+  var o = (state.orders || [])[idx];
+  if(!o) return;
+  o.status = 'done';
+  if(!state.devices) state.devices = [];
+  var exists = state.devices.find(function(d){return d.code===o.code && d.date===o.date});
+  if(!exists){
+    state.devices.push({code:o.code,name:o.name,price:o.price,ports:o.ports,tank:o.tank,date:o.date});
+  }
+  saveState();
+  closeOverlay();
+  showToast('收货成功！设备已绑定');
+  setTimeout(function(){ showOrderList('done'); }, 500);
+}
+
+// ====== Address Panel ======
+function showAddressPanel(){
+  if(!state.addresses) state.addresses = [];
+  var listHtml = state.addresses.length === 0
+    ? '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">还没有添加地址</div>'
+    : state.addresses.map(function(a, i){
+        return '<div class="order-card">'+
+          '<div style="font-size:13px;line-height:1.6">'+
+            '<strong>'+a.name+'</strong> '+a.phone+'<br>'+
+            '<span style="color:var(--muted)">'+(a.region||'')+a.detail+'</span>'+
+            (a.default ? '<span style="color:var(--green);font-size:11px;margin-left:6px">[默认]</span>' : '')+
+          '</div>'+
+          '<div style="margin-top:8px;display:flex;gap:8px">'+
+            '<button class="order-action-btn" onclick="setDefaultAddress('+i+')">设为默认</button>'+
+            '<button class="order-action-btn" onclick="deleteAddress('+i+')">删除</button>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">📍 收货地址管理</div>'+
+    listHtml+
+    '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">'+
+      '<div style="font-size:13px;font-weight:600;margin-bottom:8px">添加新地址</div>'+
+      '<div style="display:flex;gap:8px">'+
+        '<div class="form-group" style="flex:1"><input class="form-input" id="addrName" placeholder="收件人姓名" /></div>'+
+        '<div class="form-group" style="flex:1"><input class="form-input" id="addrPhone" placeholder="手机号" type="tel" /></div>'+
+      '</div>'+
+      '<div class="form-group"><input class="form-input" id="addrRegion" placeholder="省/市/区（如：江苏省南京市雨花台区）" /></div>'+
+      '<div class="form-group"><input class="form-input" id="addrDetail" placeholder="详细地址（街道+门牌号）" /></div>'+
+      '<button class="quick-btn hot" onclick="saveAddress()" style="width:100%;justify-content:center;padding:12px">保存地址</button>'+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function saveAddress(){
+  var name = document.getElementById('addrName').value.trim();
+  var phone = document.getElementById('addrPhone').value.trim();
+  var region = document.getElementById('addrRegion').value.trim();
+  var detail = document.getElementById('addrDetail').value.trim();
+  if(!name || !phone || !detail){ showToast('请填写姓名、电话和详细地址'); return; }
+  if(!state.addresses) state.addresses = [];
+  state.addresses.push({name:name, phone:phone, region:region, detail:detail, default:state.addresses.length===0});
+  saveState();
+  showAddressPanel();
+  showToast('地址已保存');
+}
+
+function setDefaultAddress(idx){
+  if(!state.addresses) return;
+  state.addresses.forEach(function(a, i){ a.default = (i === idx); });
+  saveState();
+  showAddressPanel();
+  showToast('已设为默认地址');
+}
+
+function deleteAddress(idx){
+  if(!state.addresses) return;
+  state.addresses.splice(idx, 1);
+  saveState();
+  showAddressPanel();
+  showToast('已删除');
+}
+
+// ====== Coupon Panel ======
+function showCouponPanel(){
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">🎫 我的优惠券</div>'+
+    '<div style="text-align:center;padding:30px 20px;color:var(--muted);font-size:13px">'+
+      '<div style="font-size:36px;margin-bottom:10px">🎫</div>'+
+      '暂无可用优惠券<br><br>'+
+      '<span style="font-size:12px">关注「芯菜园」公众号<br>新品上线/促销活动时自动发放</span>'+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ====== Service Panel ======
+function showServicePanel(){
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">💬 联系客服</div>'+
+    '<div style="background:var(--mint);padding:14px;border-radius:12px;margin-bottom:14px">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
+        '<div style="font-size:28px">🤖</div>'+
+        '<div><div style="font-weight:700;font-size:15px">AI种植顾问 · 7×24小时在线</div>'+
+        '<div style="font-size:12px;color:var(--muted)">种植问题秒回，不用等</div></div>'+
+      '</div>'+
+      '<button class="quick-btn green" onclick="closeOverlay();switchView(\'chat\')" style="width:100%;justify-content:center;padding:12px">💬 立即咨询AI</button>'+
+    '</div>'+
+    '<div style="background:#FFF8E1;padding:14px;border-radius:12px;margin-bottom:14px">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
+        '<div style="font-size:28px">👤</div>'+
+        '<div><div style="font-weight:700;font-size:15px">人工客服</div>'+
+        '<div style="font-size:12px;color:var(--muted)">复杂问题、售后退换由人工处理</div></div>'+
+      '</div>'+
+      '<div class="dev-detail-row"><b>📞 售后电话</b><span>400-888-XXXX（工作日 9:00-18:00）</span></div>'+
+      '<div class="dev-detail-row"><b>💬 客服微信</b><span>xincy_kf（添加备注设备型号）</span></div>'+
+      '<div class="dev-detail-row"><b>📢 公众号</b><span>搜索「芯菜园」关注获取种植技巧</span></div>'+
+    '</div>'+
+    '<div style="font-size:12px;color:var(--muted);text-align:center;line-height:1.5;padding:8px">'+
+      '💡 种植问题优先问AI，秒回不等待<br>设备故障、退款等问题联系人工客服'+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ====== Share Panel ======
+function showSharePanel(){
+  var currentUrl = window.location.href.split('#')[0];
+  var isLocal = currentUrl.indexOf('localhost') >= 0 || currentUrl.indexOf('127.0.0.1') >= 0 || currentUrl.indexOf('file://') >= 0;
+  var shareUrl = isLocal ? 'https://creative-boba-ca9265.netlify.app' : currentUrl;
+  var shareText = '我在用「芯菜园」AI水培种植管家，拍照识别菜品种、AI提醒每天该做啥、还能自动写种植日记！\n\n快来一起种菜吧~\n'+shareUrl;
+  var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(shareUrl);
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">🔗 推荐给朋友</div>'+
+    '<div style="background:var(--mint);padding:14px;border-radius:12px;margin-bottom:12px;text-align:center">'+
+      '<div style="font-size:13px;color:var(--muted);margin-bottom:4px">已推荐</div>'+
+      '<div style="font-size:24px;font-weight:700;color:var(--green)">'+(state.shareCount||0)+'人</div>'+
+      '<div style="font-size:11px;color:var(--muted);margin-top:4px">推荐越多，补给越省</div>'+
+    '</div>'+
+    '<div style="text-align:center;margin-bottom:12px">'+
+      '<img src="'+qrUrl+'" alt="二维码" style="width:160px;height:160px;border-radius:10px;border:1px solid var(--line)">'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:6px">👆 朋友扫这个二维码直接打开</div>'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">推荐链接（长按复制）</label>'+
+      '<textarea class="form-input" rows="3" readonly style="resize:none;font-size:13px">'+shareUrl+'</textarea>'+
+    '</div>'+
+    '<div class="form-group">'+
+      '<label class="form-label">推荐文案（长按复制）</label>'+
+      '<textarea class="form-input" rows="5" readonly style="resize:none;font-size:13px">'+shareText+'</textarea>'+
+    '</div>'+
+    '<button class="quick-btn hot" onclick="copyShareText(this,\''+shareText.replace(/'/g,"\\'").replace(/\n/g,'\\n')+'\')" style="width:100%;justify-content:center;padding:12px">📋 一键复制文案+链接</button>'+
+    (isLocal ? '<div style="margin-top:10px;padding:10px;background:#FFF3E0;border-radius:8px;font-size:12px;color:#E65100;line-height:1.5">⚠️ 当前是本地测试环境，分享链接已自动替换为线上地址。朋友扫码或点链接即可打开。</div>' : '')+
+    '<div style="font-size:12px;color:var(--muted);margin-top:10px;text-align:center;line-height:1.5">'+
+      '复制文案发给朋友，或让朋友直接扫码<br>朋友通过你的链接注册后，你获得10推荐积分'+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function copyShareText(btn, text){
+  text = text.replace(/\\n/g, '\n');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){
+      btn.textContent = '已复制 ✓ 去微信粘贴';
+      setTimeout(function(){btn.textContent = '📋 一键复制文案+链接'}, 2500);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+    btn.textContent = '已复制 ✓ 去微信粘贴';
+    setTimeout(function(){btn.textContent = '📋 一键复制文案+链接'}, 2500);
+  }
+}
+
+// ====== Supply Purchase ======
+function showSupplyPurchase(){
+  var supplyCode = document.getElementById('supplyDevice') ? document.getElementById('supplyDevice').value : 'D';
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">🛒 补给包购买</div>'+
+    '<div style="font-size:13px;color:var(--muted);margin-bottom:10px">根据你的设备型号，推荐以下补给包：</div>'+
+    '<div class="order-card">'+
+      '<div class="order-card-body">'+
+        '<div class="order-card-img-ph" style="background:var(--mint)">A+B</div>'+
+        '<div class="order-card-info"><strong>营养液A+B液套装</strong><span>500ml+500ml</span><span style="color:var(--green);font-weight:600">¥39.9</span></div>'+
+      '</div>'+
+      '<div class="order-card-actions"><button class="order-action-btn hot" onclick="showToast(\'已加入购物车\')">加入购物车</button></div>'+
+    '</div>'+
+    '<div class="order-card">'+
+      '<div class="order-card-body">'+
+        '<div class="order-card-img-ph" style="background:var(--mint)">棉</div>'+
+        '<div class="order-card-info"><strong>定植棉（50枚装）</strong><span>通用型</span><span style="color:var(--green);font-weight:600">¥39.9</span></div>'+
+      '</div>'+
+      '<div class="order-card-actions"><button class="order-action-btn hot" onclick="showToast(\'已加入购物车\')">加入购物车</button></div>'+
+    '</div>'+
+    '<div class="order-card">'+
+      '<div class="order-card-body">'+
+        '<div class="order-card-img-ph" style="background:var(--mint)">种</div>'+
+        '<div class="order-card-info"><strong>混合蔬菜种子套装</strong><span>6种叶菜各1包</span><span style="color:var(--green);font-weight:600">¥19.9</span></div>'+
+      '</div>'+
+      '<div class="order-card-actions"><button class="order-action-btn hot" onclick="showToast(\'已加入购物车\')">加入购物车</button></div>'+
+    '</div>'+
+    '<button class="quick-btn green" onclick="showToast(\'结算功能开发中\')" style="width:100%;justify-content:center;margin-top:8px">去结算</button>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ====== Device Manage ======
+function showDeviceManage(code){
+  var d = KB.devices.find(function(x){return x.code===code});
+  if(!d) return;
+  var dayNum = 0;
+  var myDevice = (state.devices || []).find(function(dd){return dd.code===code});
+  if(myDevice) dayNum = Math.floor((Date.now() - myDevice.date) / 86400000) + 1;
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">📦 '+d.name+' 管理</div>'+
+    '<div class="dev-detail-row"><b>型号</b><span>'+d.code+'系列</span></div>'+
+    '<div class="dev-detail-row"><b>种植口</b><span>'+d.ports+'口</span></div>'+
+    '<div class="dev-detail-row"><b>水箱</b><span>'+d.tank+'L</span></div>'+
+    (myDevice ? '<div class="dev-detail-row"><b>已使用</b><span>'+dayNum+'天</span></div>' : '')+
+    '<div class="dev-detail-row"><b>补给规则</b><span>'+d.supply+'</span></div>'+
+    '<div class="dev-detail-row"><b>规格</b><span>'+d.spec+'</span></div>'+
+    '<div style="margin-top:12px;display:flex;gap:8px">'+
+      '<button class="quick-btn hot" onclick="closeOverlay();calcSupplyForDevice(\''+code+'\')" style="flex:1;justify-content:center">查看补给</button>'+
+      '<button class="quick-btn green" onclick="closeOverlay();switchView(\'garden\')" style="flex:1;justify-content:center">我的菜园</button>'+
+    '</div>';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function calcSupplyForDevice(code){
+  var sel = document.getElementById('supplyDevice');
+  if(sel){ sel.value = code; calcSupply(); }
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(function(){
+    document.getElementById('overlay').classList.remove('show');
+    switchView('mine');
+    setTimeout(function(){ document.getElementById('overlay').classList.add('show'); }, 300);
+  }, 100);
+}
+
+// ====== Stats Panel ======
+function showStatsPanel(){
+  var totalDays = 0;
+  if(state.startDate){
+    totalDays = Math.floor((Date.now() - state.startDate) / 86400000) + 1;
+  } else if(state.crops.length > 0){
+    totalDays = Math.floor((Date.now() - Math.min.apply(null, state.crops.map(function(c){return c.plantDate}))) / 86400000) + 1;
+  }
+  var totalHarvests = state.crops.reduce(function(s,c){return s + (c.harvestLog?c.harvestLog.length:0)}, 0);
+  var totalLogs = state.crops.reduce(function(s,c){return s + (c.logs?c.logs.length:0)}, 0);
+
+  // Per-crop stats
+  var cropStatsHtml = state.crops.length === 0
+    ? '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">还没有种植数据</div>'
+    : state.crops.map(function(c, idx){
+        var ci = KB.crops.find(function(k){return k.name===c.name}) || {days:30,emoji:'🥬'};
+        var dayNum = Math.floor((Date.now() - c.plantDate) / 86400000) + 1;
+        var harvestN = c.harvestLog ? c.harvestLog.length : 0;
+        var logN = c.logs ? c.logs.length : 0;
+        var barW = Math.min(dayNum / ci.days * 100, 100);
+        return '<div class="order-card">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+            '<strong style="font-size:14px">'+ci.emoji+' '+c.name+'</strong>'+
+            '<span style="font-size:12px;color:var(--muted)">第'+dayNum+'天</span>'+
+          '</div>'+
+          '<div style="height:6px;background:#f0f5f0;border-radius:3px;overflow:hidden;margin-bottom:6px">'+
+            '<div style="height:100%;width:'+barW+'%;background:var(--green);border-radius:3px"></div>'+
+          '</div>'+
+          '<div style="display:flex;gap:12px;font-size:12px;color:var(--muted)">'+
+            '<span>🥬 采收'+harvestN+'次</span>'+
+            '<span>📝 记录'+logN+'条</span>'+
+            '<span>📍 '+c.location+'</span>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+
+  document.getElementById('sheetContent').innerHTML =
+    '<div class="sheet-title">📊 种植统计详情</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">'+
+      '<div style="background:var(--mint);padding:14px;border-radius:12px;text-align:center">'+
+        '<div style="font-size:24px;font-weight:700;color:var(--green)">'+totalDays+'</div>'+
+        '<div style="font-size:12px;color:var(--muted)">总种植天数</div>'+
+      '</div>'+
+      '<div style="background:#FFF3E0;padding:14px;border-radius:12px;text-align:center">'+
+        '<div style="font-size:24px;font-weight:700;color:var(--amber)">'+totalHarvests+'</div>'+
+        '<div style="font-size:12px;color:var(--muted)">总采收次数</div>'+
+      '</div>'+
+      '<div style="background:#E3F2FD;padding:14px;border-radius:12px;text-align:center">'+
+        '<div style="font-size:24px;font-weight:700;color:var(--blue)">¥'+state.savedMoney+'</div>'+
+        '<div style="font-size:12px;color:var(--muted)">累计省下买菜钱</div>'+
+      '</div>'+
+      '<div style="background:#F3E5F5;padding:14px;border-radius:12px;text-align:center">'+
+        '<div style="font-size:24px;font-weight:700;color:#7E57C2">'+totalLogs+'</div>'+
+        '<div style="font-size:12px;color:var(--muted)">种植记录条数</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:var(--mint);padding:12px;border-radius:10px;margin-bottom:14px;font-size:12px;line-height:1.6">'+
+      '💡 <b>环保贡献</b><br>'+
+      '相比外购蔬菜，你的水培菜减少了运输碳排放、塑料包装消耗，并且0农残0激素——每采收一次，都是对家人健康的一次投资。'+
+    '</div>'+
+    '<div style="font-size:14px;font-weight:600;margin-bottom:10px">各菜品详情</div>'+
+    cropStatsHtml;
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ====== Supply Calculator ======
+function calcSupply(){
+  var code = document.getElementById('supplyDevice').value;
+  var d = KB.devices.find(function(x){return x.code===code});
+  if(!d) return;
+  var standardA = d.tank * 5;
+  var standardB = d.tank * 5;
+  var monthlyWater = d.tank * 2;
+  var monthlyA = monthlyWater * 5;
+  var monthlySets = Math.ceil(monthlyA / KB.nutrientSet.aMl);
+  var monthlyNutrientCost = monthlySets * KB.nutrientSet.retail;
+  var setsByTank = (KB.nutrientSet.aMl / standardA).toFixed(1);
+
+  document.getElementById('supplyResult').innerHTML =
+    '<b>'+d.name+' 补给计算</b><br><br>'+
+    '水箱容量：'+d.tank+'L<br>'+
+    '标准配比：每1L水加A液5ml+B液5ml<br>'+
+    '满箱用量：A液'+standardA+'ml + B液'+standardB+'ml<br>'+
+    '一套营养液(500ml+500ml)约可补'+setsByTank+'箱<br><br>'+
+    '<b>月度预估</b><br>'+
+    '按月补满2箱估算：<br>'+
+    '需营养液约'+monthlySets+'套，参考零售价¥'+monthlyNutrientCost.toFixed(1)+'<br>'+
+    '定植棉：20枚¥19.9 / 50枚¥39.9 / 80枚¥69.9<br><br>'+
+    '<button class="quick-btn hot" onclick="showSupplyPurchase()" style="width:100%;justify-content:center">🛒 续购补给包</button>';
+}
+
+// ====== Image Viewer ======
+function openImageViewer(src, caption){
+  var viewer = document.getElementById('imageViewer');
+  var img = document.getElementById('imageViewerImg');
+  var cap = document.getElementById('imageViewerCaption');
+  if(!viewer || !img) return;
+  img.src = src;
+  if(cap) cap.textContent = caption || '产品图';
+  viewer.classList.add('show');
+}
+function closeImageViewer(event){
+  if(event && event.target && event.target.id !== 'imageViewer' && event.target.id !== 'imageViewerImg' && !event.target.classList.contains('image-viewer-close')) return;
+  var viewer = document.getElementById('imageViewer');
+  if(!viewer) return;
+  viewer.classList.remove('show');
+  var img = document.getElementById('imageViewerImg');
+  if(img) img.src = '';
+}
+
+// ====== Overlay ======
+function closePanel(e){
+  if(e.target === document.getElementById('overlay')) closeOverlay();
+}
+function closeOverlay(){
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ====== Copy ======
+function copyText(btn, text){
+  text = text.replace(/\\n/g, '\n');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){
+      btn.textContent = '已复制 ✓';
+      setTimeout(function(){btn.textContent = '复制全部'}, 2000);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+    btn.textContent = '已复制 ✓';
+    setTimeout(function(){btn.textContent = '复制全部'}, 2000);
+  }
+}
+
+// ====== Init ======
+setTimeout(function(){
+  aiSayLong(
+    '你好，我是小芯 ☀️\n\n'+
+    '你的AI种植管家。我能帮你：\n\n'+
+    '🤖 <b>选设备</b> — 不懂参数没关系，我问你几个问题就推荐\n'+
+    '💧 <b>陪种植</b> — 每天只告诉你一件事：不用管/补水/拍照/采摘\n'+
+    '✍️ <b>写文案</b> — 自动生成小红书/抖音种植日记\n'+
+    '📊 <b>算成本</b> — 种菜vs买菜，到底哪个划算\n'+
+    '🔍 <b>做对比</b> — 水培vs土培vs外购，区别在哪\n\n'+
+    '📷 <b>拍照识别</b> — 点输入框右侧相机按钮，拍菜自动识别\n\n'+
+    '点击底部「我的菜园」可以添加你种的菜，我会自动跟踪进度。\n'+
+    '点击「我的」查看健康档案和设备管理。\n\n'+
+    '直接点下面的按钮，或者问我任何问题！', 800
+  );
+  calcSupply();
+}, 300);
+</script>
+</body>
+</html>

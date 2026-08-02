@@ -1,0 +1,13 @@
+{
+  "name": "xincaiyuan-app",
+  "version": "1.0.0",
+  "description": "芯菜园 AI 种植管家 - 家庭水培APP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {}
+}

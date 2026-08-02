@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: xincaiyuan
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    # API Key在Render控制台"Environment"里手动配置，不写在这里避免泄漏
+    # BAIDU_API_KEY, BAIDU_SECRET_KEY（图像识别用，可选）
+    # QIANFAN_API_KEY（千帆大模型，核心）
+    envVars:
+      - key: NODE_VERSION
+        value: 18
