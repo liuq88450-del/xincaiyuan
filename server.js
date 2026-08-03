@@ -13,6 +13,69 @@ let imgTokenTime = 0;
 const ROOT = __dirname;
 const PORT = process.env.PORT || 8799;
 
+// ============ 用户数据统计系统 ============
+const DATA_FILE = path.join(ROOT, 'data.json');
+let appData = { visits: 0, users: {}, chats: [], plants: [] };
+
+// 加载数据
+function loadData(){
+  try{
+    if(fs.existsSync(DATA_FILE)){
+      const content = fs.readFileSync(DATA_FILE, 'utf8');
+      appData = JSON.parse(content);
+    }
+  }catch(e){
+    console.log('加载数据失败:', e.message);
+  }
+}
+
+// 保存数据
+function saveData(){
+  try{
+    fs.writeFileSync(DATA_FILE, JSON.stringify(appData, null, 2));
+  }catch(e){
+    console.log('保存数据失败:', e.message);
+  }
+}
+
+// 记录访问
+function recordVisit(uid, info = {}){
+  appData.visits++;
+  if(!appData.users[uid]){
+    appData.users[uid] = { 
+      firstVisit: new Date().toISOString(), 
+      lastVisit: new Date().toISOString(),
+      visitCount: 1,
+      ...info 
+    };
+  }else{
+    appData.users[uid].lastVisit = new Date().toISOString();
+    appData.users[uid].visitCount++;
+  }
+  saveData();
+}
+
+// 记录对话
+function recordChat(uid, message, reply){
+  appData.chats.push({
+    uid, message, reply,
+    time: new Date().toISOString()
+  });
+  // 只保留最近500条
+  if(appData.chats.length > 500) appData.chats = appData.chats.slice(-500);
+  saveData();
+}
+
+// 记录植物
+function recordPlant(uid, plantName, action){
+  appData.plants.push({ uid, plantName, action, time: new Date().toISOString() });
+  if(appData.plants.length > 500) appData.plants = appData.plants.slice(-500);
+  saveData();
+}
+
+// 启动时加载数据
+loadData();
+
 // MIME types
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -118,6 +181,207 @@ const server = http.createServer(async function(req, res){
       imgReady: !!IMG_KEY,
       message: '芯菜园AI服务'
     }));
+    return;
+  }
+
+  // ============ 统计API ============
+  // 记录访问
+  if(req.url === '/api/record-visit' && req.method === 'POST'){
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try{
+        const data = JSON.parse(body);
+        recordVisit(data.uid || 'unknown', data.info || {});
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({ok: true}));
+      }catch(e){
+        res.writeHead(500, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({error: e.message}));
+      }
+    });
+    return;
+  }
+
+  // 记录对话
+  if(req.url === '/api/record-chat' && req.method === 'POST'){
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try{
+        const data = JSON.parse(body);
+        recordChat(data.uid || 'unknown', data.message || '', data.reply || '');
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({ok: true}));
+      }catch(e){
+        res.writeHead(500, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({error: e.message}));
+      }
+    });
+    return;
+  }
+
+  // 记录植物操作
+  if(req.url === '/api/record-plant' && req.method === 'POST'){
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try{
+        const data = JSON.parse(body);
+        recordPlant(data.uid || 'unknown', data.plantName || '', data.action || '');
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({ok: true}));
+      }catch(e){
+        res.writeHead(500, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({error: e.message}));
+      }
+    });
+    return;
+  }
+
+  // 获取统计数据（后台）
+  if(req.url === '/api/stats' && req.method === 'GET'){
+    const stats = {
+      totalVisits: appData.visits,
+      totalUsers: Object.keys(appData.users).length,
+      totalChats: appData.chats.length,
+      totalPlants: appData.plants.length,
+      recentUsers: Object.values(appData.users).slice(-10).reverse(),
+      recentChats: appData.chats.slice(-20).reverse(),
+      recentPlants: appData.plants.slice(-20).reverse()
+    };
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify(stats));
+    return;
+  }
+
+  // 后台页面
+  if(req.url === '/admin' || req.url === '/admin.html'){
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>芯菜园后台 - 数据统计</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;padding:20px}
+    .header{background:linear-gradient(135deg,#00c853,#69f0ae);color:white;padding:20px;border-radius:12px;margin-bottom:20px}
+    .header h1{font-size:24px;margin-bottom:5px}
+    .header p{opacity:0.9}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}
+    .stat-card{background:white;padding:20px;border-radius:12px;text-align:center;box-shadow:0 2px8px rgba(0,0,0,0.08)}
+    .stat-card .num{font-size:32px;font-weight:bold;color:#00c853}
+    .stat-card .label{color:#666;font-size:14px;margin-top:5px}
+    .section{background:white;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px8px rgba(0,0,0,0.08)}
+    .section h2{font-size:18px;margin-bottom:15px;color:#333;border-bottom:2px solid #00c853;padding-bottom:10px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px;text-align:left;border-bottom:1px solid #eee}
+    th{background:#f8f8f8;font-weight:600;color:#666}
+    tr:hover{background:#fafafa}
+    .time{color:#999;font-size:12px}
+    .action-add{color:#00c853}
+    .action-harvest{color:#ff9800}
+    .empty{text-align:center;color:#999;padding:40px}
+    .btn{background:#00c853;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-right:5px}
+    .btn:hover{background:#00a844}
+    .btn-refresh{float:right}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🌱 芯菜园后台管理系统</h1>
+    <p>数据统计 · 用户分析 · 运营监控</p>
+  </div>
+  
+  <div class="stats">
+    <div class="stat-card">
+      <div class="num" id="totalVisits">-</div>
+      <div class="label">总访问量</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="totalUsers">-</div>
+      <div class="label">用户数</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="totalChats">-</div>
+      <div class="label">对话数</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="totalPlants">-</div>
+      <div class="label">植物记录</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📊 最近用户 <button class="btn btn-refresh" onclick="loadStats()">刷新</button></h2>
+    <table id="usersTable">
+      <thead><tr><th>首次访问</th><th>最后访问</th><th>访问次数</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>💬 最近对话</h2>
+    <table id="chatsTable">
+      <thead><tr><th>时间</th><th>用户</th><th>提问</th><th>AI回复</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>🌿 植物操作记录</h2>
+    <table id="plantsTable">
+      <thead><tr><th>时间</th><th>用户</th><th>操作</th><th>植物</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    async function loadStats(){
+      try{
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        
+        document.getElementById('totalVisits').textContent = data.totalVisits;
+        document.getElementById('totalUsers').textContent = data.totalUsers;
+        document.getElementById('totalChats').textContent = data.totalChats;
+        document.getElementById('totalPlants').textContent = data.totalPlants;
+        
+        // 最近用户
+        const usersBody = document.querySelector('#usersTable tbody');
+        if(data.recentUsers.length === 0){
+          usersBody.innerHTML = '<tr><td colspan="3" class="empty">暂无数据</td></tr>';
+        }else{
+          usersBody.innerHTML = data.recentUsers.map(u => '<tr><td>'+u.firstVisit.substring(0,19)+'</td><td>'+u.lastVisit.substring(0,19)+'</td><td>'+u.visitCount+'</td></tr>').join('');
+        }
+        
+        // 最近对话
+        const chatsBody = document.querySelector('#chatsTable tbody');
+        if(data.recentChats.length === 0){
+          chatsBody.innerHTML = '<tr><td colspan="4" class="empty">暂无对话</td></tr>';
+        }else{
+          chatsBody.innerHTML = data.recentChats.map(c => '<tr><td class="time">'+c.time.substring(0,19)+'</td><td>'+(c.uid||'匿名').substring(0,8)+'</td><td>'+c.message.substring(0,30)+'</td><td>'+(c.reply||'').substring(0,50)+'</td></tr>').join('');
+        }
+        
+        // 植物记录
+        const plantsBody = document.querySelector('#plantsTable tbody');
+        if(data.recentPlants.length === 0){
+          plantsBody.innerHTML = '<tr><td colspan="4" class="empty">暂无记录</td></tr>';
+        }else{
+          plantsBody.innerHTML = data.recentPlants.map(p => '<tr><td class="time">'+p.time.substring(0,19)+'</td><td>'+(p.uid||'匿名').substring(0,8)+'</td><td class="action-'+p.action+'">'+p.action+'</td><td>'+p.plantName+'</td></tr>').join('');
+        }
+      }catch(e){
+        console.error('加载失败:', e);
+      }
+    }
+    loadStats();
+    setInterval(loadStats, 30000);
+  </script>
+</body>
+</html>`;
+    res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+    res.end(html);
     return;
   }
 

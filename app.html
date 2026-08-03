@@ -865,6 +865,23 @@ button{cursor:pointer}
 // ====== Config ======
 var imgBase = "https://c28aff93c78b4d2aa773d95ded3ac0ad.bj5.agentos-app.net/products/";
 
+// ====== 用户ID与统计 ======
+function getUid(){
+  var uid = localStorage.getItem('xincaiyuan_uid');
+  if(!uid){
+    uid = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
+    localStorage.setItem('xincaiyuan_uid', uid);
+  }
+  return uid;
+}
+
+// 记录访问
+fetch('/api/record-visit', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({uid: getUid(), info: {firstVisit: new Date().toISOString()}})
+}).catch(function(){});
+
 // ====== Knowledge Base ======
 var KB = {
   devices: [
@@ -1119,8 +1136,16 @@ function aiSay(text, delay){
   }, delay);
 }
 function userSay(text){ addMsg('user', text); }
-function aiSayLong(text, delay){
+function aiSayLong(text, delay, userMsg){
   delay = delay || 600;
+  // 记录对话到服务器
+  if(userMsg){
+    fetch('/api/record-chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({uid: getUid(), message: userMsg, reply: text})
+    }).catch(function(){});
+  }
   addTyping();
   setTimeout(function(){
     removeTyping();
@@ -1288,7 +1313,7 @@ function sendInput(){
     /* 精准关键词匹配，避免误触发 */
     var has = function(){ for(var i=0;i<arguments.length;i++){ if(text.indexOf(arguments[i])>=0) return true; } return false; };
 
-    if(has('选设备','买','推荐设备','哪个设备','选哪个','选一台','多少钱的设备')){
+    if(has('选设备','买设备','推荐设备','哪个设备','选哪个','选一台','多少钱的设备','想买','要买一台')){
       userAction('pick');
     } else if(has('今天该做','今天做','该做啥','做什么','任务','浇水','换水','该浇水','提醒')){
       userAction('care');
@@ -1480,11 +1505,24 @@ function callLLM(message){
       // 移除"正在思考"消息
       var thinking = chatEl.querySelector('.msg.ai:last-child');
       if(thinking && thinking.textContent.indexOf('正在思考') >= 0) thinking.remove();
+      // 记录对话
+      fetch('/api/record-chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({uid: getUid(), message: message, reply: data.reply})
+      }).catch(function(){});
       aiSayLong(data.reply, 300);
     } else {
       llmAvailable = false;
       var thinking = chatEl.querySelector('.msg.ai:last-child');
       if(thinking && thinking.textContent.indexOf('正在思考') >= 0) thinking.remove();
+      // 记录对话
+      var fallbackReply = '我是小芯，你的AI种植管家...';
+      fetch('/api/record-chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({uid: getUid(), message: message, reply: fallbackReply})
+      }).catch(function(){});
       aiSayLong(
         '我是小芯，你的AI种植管家。我可以帮你：\n\n'+
         '🤖 <b>选设备</b> — 告诉我家里几口人、放哪里、预算多少\n'+
