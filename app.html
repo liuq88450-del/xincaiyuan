@@ -1135,16 +1135,22 @@ function aiSay(text, delay){
     addMsg('ai', text);
   }, delay);
 }
-function userSay(text){ addMsg('user', text); }
-function aiSayLong(text, delay, userMsg){
+var _lastUserMsg = ''; // 保存最后一条用户消息
+function userSay(text){ 
+  _lastUserMsg = text; 
+  addMsg('user', text); 
+}
+function aiSayLong(text, delay){
   delay = delay || 600;
-  // 记录对话到服务器
-  if(userMsg){
+  // 记录对话到服务器（不管有没有userMsg都记录）
+  var um = _lastUserMsg;
+  if(um){
     fetch('/api/record-chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({uid: getUid(), message: userMsg, reply: text})
+      body: JSON.stringify({uid: getUid(), message: um, reply: text})
     }).catch(function(){});
+    _lastUserMsg = ''; // 记录后清空
   }
   addTyping();
   setTimeout(function(){
