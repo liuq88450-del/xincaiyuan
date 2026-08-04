@@ -1090,6 +1090,18 @@ function saveState(){
 }
 var state = loadState();
 
+// ====== Init ======
+function initApp(){
+  // 刷新顶部状态栏
+  if(state.crops.length > 0){
+    var banner = document.getElementById('bannerTitle');
+    if(banner) banner.innerHTML = '🌱 '+state.crops.length+'种菜品正在生长';
+    var sb = document.getElementById('statusBanner');
+    if(sb) sb.classList.add('has-crops');
+  }
+}
+initApp();
+
 // ====== Toast ======
 function showToast(msg){
   var t = document.createElement('div');
