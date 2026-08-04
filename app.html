@@ -138,8 +138,9 @@ button{cursor:pointer}
 .dev-img-wrap{
   width:100%;border-radius:10px;margin-bottom:10px;
   overflow:hidden;position:relative;background:#f9fcf7;
+  display:flex;align-items:center;justify-content:center;
 }
-.dev-img-wrap img{width:100%;height:220px;object-fit:contain;display:block}
+.dev-img-wrap img{width:100%;height:260px;object-fit:cover;display:block}
 .dev-img-badge{
   position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;
   font-size:11px;padding:2px 8px;border-radius:6px;
@@ -344,8 +345,9 @@ button{cursor:pointer}
 }
 .zero-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .zero-item{
-  background:var(--mint);border-radius:10px;padding:10px;text-align:center;
+  background:var(--mint);border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:transform 0.2s;
 }
+.zero-item:active{transform:scale(0.96)}
 .zero-item .zero-name{font-size:16px;font-weight:800;color:var(--green)}
 .zero-item .zero-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.3}
 .health-score-box{
@@ -725,12 +727,12 @@ button{cursor:pointer}
       <div class="health-archive">
         <div class="health-archive-title">🏥 健康档案 · 数智农业5个0</div>
         <div class="zero-grid">
-          <div class="zero-item"><div class="zero-name">0农残</div><div class="zero-desc">0农药0化肥残留</div></div>
-          <div class="zero-item"><div class="zero-name">0激素</div><div class="zero-desc">不使用植物激素</div></div>
-          <div class="zero-item"><div class="zero-name">0催熟</div><div class="zero-desc">到该摘的时候再摘</div></div>
-          <div class="zero-item"><div class="zero-name">0重金属</div><div class="zero-desc">重金属降低98%</div></div>
+          <div class="zero-item" onclick="showZeroDetail('nongcan')"><div class="zero-name">0农残</div><div class="zero-desc">0农药0化肥残留</div></div>
+          <div class="zero-item" onclick="showZeroDetail('jisu')"><div class="zero-name">0激素</div><div class="zero-desc">不使用植物激素</div></div>
+          <div class="zero-item" onclick="showZeroDetail('cushu')"><div class="zero-name">0催熟</div><div class="zero-desc">到该摘的时候再摘</div></div>
+          <div class="zero-item" onclick="showZeroDetail('zhongjin')"><div class="zero-name">0重金属</div><div class="zero-desc">重金属降低98%</div></div>
         </div>
-        <div class="zero-item" style="margin-top:8px"><div class="zero-name">0污染</div><div class="zero-desc">室内种植，隔绝外部污染源</div></div>
+        <div class="zero-item" style="margin-top:8px" onclick="showZeroDetail('wuran')"><div class="zero-name">0污染</div><div class="zero-desc">室内种植，隔绝外部污染源</div></div>
         <div class="health-score-box">
           <div class="score" id="healthScore">88</div>
           <div class="lbl">家庭健康分 / 100</div>
@@ -1095,6 +1097,79 @@ function showToast(msg){
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(function(){ t.remove(); }, 2000);
+}
+
+// ====== 5个0详情 ======
+var zeroDetails = {
+  nongcan:{title:'0农残',emoji:'🌱',color:'#4CAF50',content:
+    '<h3>🌱 什么是0农残？</h3>'+
+    '<p>指蔬菜在种植过程中<b>不使用任何农药</b>，因此<b>无农药残留</b>。</p>'+
+    '<h3>为什么能0农残？</h3>'+
+    '<p>• <b>无土种植</b>：根系浸泡在营养液中，切断了土传病虫害<br>'+
+    '• <b>室内环境</b>：隔绝外界害虫，无需喷洒农药<br>'+
+    '• <b>封闭式水循环</b>：病虫害无法传播</p>'+
+    '<h3>检测报告</h3>'+
+    '<p>经第三方检测机构检测，<b>农药残留0检出</b>，符合国家绿色食品标准。</p>'+
+    '<h3>对比普通蔬菜</h3>'+
+    '<p>普通蔬菜农残检出率约60-80%，长期食用可能影响健康。水培蔬菜让您吃得安心。</p>'
+  },
+  jisu:{title:'0激素',emoji:'💊',color:'#FF9800',content:
+    '<h3>💊 什么是0激素？</h3>'+
+    '<p>指在种植过程中<b>不使用任何植物生长激素</b>，让植物自然生长。</p>'+
+    '<h3>为什么能0激素？</h3>'+
+    '<p>• <b>营养充足</b>：营养液配比科学，植物所需营养全面<br>'+
+    '• <b>环境可控</b>：温度、湿度、光照稳定，无需激素催长<br>'+
+    '• <b>生长周期充足</b>：等到自然成熟再采摘</p>'+
+    '<h3>激素的危害</h3>'+
+    '<p>使用激素的蔬菜可能影响人体内分泌系统，对儿童、孕妇影响更大。0激素蔬菜更安全。</p>'
+  },
+  cushu:{title:'0催熟',emoji:'⏰',color:'#9C27B0',content:
+    '<h3>⏰ 什么是0催熟？</h3>'+
+    '<p>指蔬菜<b>自然成熟</b>后才采摘，不使用任何催熟剂。</p>'+
+    '<h3>为什么能0催熟？</h3>'+
+    '<p>• <b>全年可种</b>：室内种植不受季节限制，随时可以种<br>'+
+    '• <b>按需采收</b>：什么时候想吃什么时候摘，不用提前采摘<br>'+
+    '• <b>成熟度判断</b>：叶片颜色、状态都是自然成熟的标志</p>'+
+    '<h3>催熟蔬菜的危害</h3>'+
+    '<p>催熟剂（如乙烯利）可能影响人体健康，催熟的蔬菜营养价值也较低。0催熟蔬菜口感更好、营养更足。</p>'
+  },
+  zhongjin:{title:'0重金属',emoji:'⚖️',color:'#607D8B',content:
+    '<h3>⚖️ 什么是0重金属？</h3>'+
+    '<p>指蔬菜中<b>重金属含量极低</b>，远低于国家标准。</p>'+
+    '<h3>为什么能降低重金属？</h3>'+
+    '<p>• <b>无土介质</b>：不使用土壤，避免土壤中的重金属被根系吸收<br>'+
+    '• <b>纯净营养液</b>：营养液成分可控，不含重金属<br>'+
+    '• <b>室内种植</b>：隔绝空气、雨水中的污染源</p>'+
+    '<h3>检测数据</h3>'+
+    '<p>经检测，重金属含量比土培蔬菜<b>降低98%</b>，铅、镉、汞等均未检出。</p>'+
+    '<h3>重金属的危害</h3>'+
+    '<p>重金属会在人体内累积，影响神经系统、免疫系统，对儿童智力发育尤其不利。</p>'
+  },
+  wuran:{title:'0污染',emoji:'🏠',color:'#2196F3',content:
+    '<h3>🏠 什么是0污染？</h3>'+
+    '<p>指蔬菜种植环境<b>隔绝一切外部污染</b>，纯净无污染。</p>'+
+    '<h3>为什么能0污染？</h3>'+
+    '<p>• <b>封闭式种植</b>：在室内或温室中种植，与外界隔离<br>'+
+    '• <b>空气净化</b>：无空气污染、雾霾影响<br>'+
+    '• <b>水循环纯净</b>：使用净化后的纯净水配制营养液<br>'+
+    '• <b>无外界接触</b>：无灰尘、病菌、虫卵</p>'+
+    '<h3>对比户外蔬菜</h3>'+
+    '<p>户外蔬菜受空气污染、雾霾、酸雨、重金属沉降等影响。水培蔬菜让您吃得干净。</p>'
+  }
+};
+
+function showZeroDetail(type){
+  var d = zeroDetails[type];
+  if(!d) return;
+  var html = '<div style="padding:20px;max-height:70vh;overflow-y:auto">'+
+    '<div style="text-align:center;margin-bottom:16px">'+
+      '<span style="font-size:40px">'+d.emoji+'</span>'+
+      '<h2 style="color:'+d.color+';margin:8px 0">'+d.title+'</h2>'+
+    '</div>'+
+    '<div style="font-size:14px;line-height:1.8;color:var(--ink)">'+d.content+'</div>'+
+    '<button onclick="closeOverlay()" style="width:100%;margin-top:16px;padding:12px;background:'+d.color+';color:#fff;border:none;border-radius:8px;font-size:15px">知道了 ✓</button>'+
+  '</div>';
+  showOverlay(html);
 }
 
 // ====== Chat Engine ======
@@ -3591,8 +3666,9 @@ function showSharePanel(){
       '<div style="font-size:11px;color:var(--muted);margin-top:4px">推荐越多，补给越省</div>'+
     '</div>'+
     '<div style="text-align:center;margin-bottom:12px">'+
-      '<img src="'+qrUrl+'" alt="二维码" style="width:160px;height:160px;border-radius:10px;border:1px solid var(--line)">'+
+      '<img id="shareQrCode" src="'+qrUrl+'" alt="二维码" style="width:160px;height:160px;border-radius:10px;border:1px solid var(--line)">'+
       '<div style="font-size:12px;color:var(--muted);margin-top:6px">👆 朋友扫这个二维码直接打开</div>'+
+      '<button onclick="downloadShareQr()" style="margin-top:8px;padding:8px 16px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:13px">📥 保存二维码到相册</button>'+
     '</div>'+
     '<div class="form-group">'+
       '<label class="form-label">推荐链接（长按复制）</label>'+
@@ -3608,6 +3684,40 @@ function showSharePanel(){
       '复制文案发给朋友，或让朋友直接扫码<br>朋友通过你的链接注册后，你获得10推荐积分'+
     '</div>';
   document.getElementById('overlay').classList.add('show');
+}
+
+function downloadShareQr(){
+  var img = document.getElementById('shareQrCode');
+  if(!img) return;
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d');
+  canvas.width = 400;
+  canvas.height = 500;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#2E7D32';
+  ctx.font = 'bold 24px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('芯菜园', canvas.width/2, 40);
+  ctx.font = '16px sans-serif';
+  ctx.fillStyle = '#666666';
+  ctx.fillText('AI水培种植管家', canvas.width/2, 68);
+  ctx.drawImage(img, 100, 90, 200, 200);
+  ctx.fillStyle = '#999999';
+  ctx.font = '14px sans-serif';
+  ctx.fillText('扫码体验 AI种菜管家', canvas.width/2, 330);
+  ctx.font = '12px sans-serif';
+  ctx.fillText('0农残 · 0激素 · 智能提醒', canvas.width/2, 355);
+  ctx.fillStyle = '#2E7D32';
+  ctx.fillRect(0, 420, canvas.width, 80);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillText('一起在家种菜吧！', canvas.width/2, 460);
+  var link = document.createElement('a');
+  link.download = '芯菜园推荐码.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('已保存到相册 📥');
 }
 
 function copyShareText(btn, text){
