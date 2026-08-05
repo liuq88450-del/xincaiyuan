@@ -145,6 +145,8 @@ button{cursor:pointer}
   width:100%;border-radius:10px;margin-bottom:10px;
   overflow:hidden;position:relative;
   display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#f0f9ee,#e0efe0);
+  min-height:300px;
 }
 /* 背景：同一张图放大模糊铺满，保证满屏且不裁剪 */
 .dev-img-wrap .dev-img-bg{
@@ -152,10 +154,11 @@ button{cursor:pointer}
   object-fit:cover;filter:blur(18px) brightness(.92);
   transform:scale(1.15);
 }
-/* 前景：完整显示设备图 */
+/* 前景：完整显示设备图，占满宽度、高度自适应 */
 .dev-img-wrap .dev-img-main{
   position:relative;z-index:1;
-  max-width:92%;max-height:300px;object-fit:contain;display:block;
+  width:100%;object-fit:contain;display:block;
+  max-height:420px;
   filter:drop-shadow(0 4px 12px rgba(0,0,0,.18));
 }
 .dev-img-badge{
@@ -3201,10 +3204,9 @@ function renderDeviceCard(d, inChat, idx){
 
   var galleryHtml = '';
   if(d.gallery && d.gallery.length > 0){
-    var gJson = JSON.stringify(d.gallery.map(function(g){return {src:g.src,label:g.label};})).replace(/'/g,"\\'");
     galleryHtml = '<div class="dev-gallery">'+
       d.gallery.map(function(g){
-        return '<div class="dev-gallery-item" onclick="openImageViewer(\''+g.src+'\',\''+g.label+'\','+gJson+')">'+
+        return '<div class="dev-gallery-item" onclick="openDeviceGallery(\''+d.code+'\',\''+g.src+'\')">'+
           '<img src="'+g.src+'" alt="'+g.label+'">'+
         '</div>';
       }).join('')+
@@ -3322,10 +3324,9 @@ function openDeviceDetail(code){
 
   var galleryHtml = '';
   if(d.gallery && d.gallery.length > 0){
-    var gJson2 = JSON.stringify(d.gallery.map(function(g){return {src:g.src,label:g.label};})).replace(/'/g,"\\'");
     galleryHtml = '<div class="dev-gallery" style="margin-top:12px">'+
       d.gallery.map(function(g){
-        return '<div class="dev-gallery-item" onclick="openImageViewer(\''+g.src+'\',\''+g.label+'\','+gJson2+')" style="width:100px;height:100px">'+
+        return '<div class="dev-gallery-item" onclick="openDeviceGallery(\''+d.code+'\',\''+g.src+'\')" style="width:100px;height:100px">'+
           '<img src="'+g.src+'" alt="'+g.label+'">'+
         '</div>';
       }).join('')+
@@ -4054,6 +4055,12 @@ function calcSupply(){
 // ====== Image Viewer ======
 var imgGallery = [];   // 图册数组
 var imgIdx = 0;        // 当前索引
+// 从设备知识库取图册打开（避免onclick引号问题）
+function openDeviceGallery(code, src){
+  var d = KB.devices.find(function(x){return x.code===code});
+  if(!d || !d.gallery || d.gallery.length === 0){ openImageViewer(src, ''); return; }
+  openImageViewer(src, '', d.gallery);
+}
 function openImageViewer(src, caption, gallery){
   var viewer = document.getElementById('imageViewer');
   var img = document.getElementById('imageViewerImg');
