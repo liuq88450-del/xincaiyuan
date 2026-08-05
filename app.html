@@ -71,6 +71,12 @@ button{cursor:pointer}
   flex:1;overflow-y:auto;padding:16px 14px 8px;
   display:flex;flex-direction:column;gap:14px;
   scroll-behavior:smooth;-webkit-overflow-scrolling:touch;
+  background-image:
+    radial-gradient(circle at 90% 5%, rgba(102,187,106,.10) 0, transparent 25%),
+    radial-gradient(circle at 5% 30%, rgba(46,125,50,.07) 0, transparent 22%),
+    radial-gradient(circle at 95% 60%, rgba(102,187,106,.06) 0, transparent 20%),
+    radial-gradient(circle at 10% 85%, rgba(46,125,50,.05) 0, transparent 25%);
+  background-attachment:local;
 }
 .msg{display:flex;gap:8px;max-width:88%;animation:slideUp .3s ease}
 .msg.ai{align-self:flex-start}
@@ -238,6 +244,19 @@ button{cursor:pointer}
 .status-banner strong{color:var(--green)}
 .status-banner .arrow{font-size:20px;color:var(--green);flex-shrink:0}
 
+/* ====== Health Ticker（水培知识条） ====== */
+.health-ticker{
+  margin:0 14px 8px;padding:8px 12px;border-radius:10px;
+  background:linear-gradient(90deg,#f1f8e9,#e8f5e9);
+  border:1px solid #d7e8d2;
+  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--green);
+  cursor:pointer;transition:.2s;animation:slideUp .4s ease;
+}
+.health-ticker:active{background:#e8f5e9}
+.ticker-ico{flex-shrink:0;font-size:14px}
+.ticker-text{flex:1;min-width:0;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ticker-more{flex-shrink:0;font-size:10px;color:var(--muted);background:#fff;padding:2px 8px;border-radius:999px;border:1px solid #d7e8d2}
+
 /* ====== Garden View ====== */
 .garden-view{padding:14px;gap:12px}
 .garden-stats{
@@ -396,6 +415,7 @@ button{cursor:pointer}
 .order-card-actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
 .order-action-btn{padding:6px 14px;border-radius:999px;font-size:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
 .order-action-btn.hot{background:var(--green);color:#fff;border-color:var(--green)}
+.order-action-btn.danger{background:#fff5f5;color:var(--danger);border-color:#e8c4bb}
 
 .mine-tool-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
 .mine-tool{
@@ -631,12 +651,17 @@ button{cursor:pointer}
   <!-- ====== Chat View ====== -->
   <div class="view active" id="view-chat">
     <div class="status-banner" id="statusBanner" onclick="switchView('garden')">
-      <span class="icon">🌿</span>
+      <span class="icon" id="statusIcon">🌿</span>
       <div class="banner-text">
         <strong id="bannerTitle">点击"我的菜园"添加你的菜品</strong>
         <div style="font-size:11px;color:var(--muted)" id="bannerSub">AI会自动跟踪生长进度</div>
       </div>
       <span class="arrow">›</span>
+    </div>
+    <div class="health-ticker" id="healthTicker" onclick="toggleHealthTip()">
+      <span class="ticker-ico">💡</span>
+      <span class="ticker-text" id="tickerText">水培知识：无土种植，0农残0农药0化肥</span>
+      <span class="ticker-more">换一条</span>
     </div>
     <div class="chat" id="chat"></div>
     <div class="quick-row" id="quickRow">
@@ -865,7 +890,7 @@ button{cursor:pointer}
 
 <script>
 // ====== Config ======
-var imgBase = "https://c28aff93c78b4d2aa773d95ded3ac0ad.bj5.agentos-app.net/products/";
+var imgBase = "https://bc99b4124dae42038555dfe3807adbb2.sh1.agentos-app.net/products/";
 
 // ====== 用户ID与统计 ======
 function getUid(){
@@ -942,11 +967,11 @@ var KB = {
      shipping:'2层款，1台/箱，外箱55x37x44cm，8.8kg。'
     },
     {code:'T',name:'T 系列66口每日采收款',price:1680,old:1980,ports:66,tank:10,
-     emoji:'🌾',image:imgBase+'dt/2_09.jpg',imageLabel:'T实拍',
+     emoji:'🌾',image:imgBase+'dt/t_split_1.jpg',imageLabel:'T实拍',
      gallery:[
-       {src:imgBase+'dt/2_09.jpg',label:'T系列66口三层款'},
-       {src:imgBase+'dt/2_01.jpg',label:'更接近家庭循环'},
-       {src:imgBase+'dt/2_04.jpg',label:'多层水培展示'}
+       {src:imgBase+'dt/t_split_1.jpg',label:'T系列66口三层款'},
+       {src:imgBase+'dt/t_split_2.jpg',label:'更接近家庭循环'},
+       {src:imgBase+'dt/t_split_3.jpg',label:'多层水培展示'}
      ],
      desc:'66个种植口，10L水箱。适合错峰种植，尽量做到每天现摘一点。',
      tags:['66口','每日采收','错峰种植'],cat:'pro',
@@ -1091,6 +1116,32 @@ function saveState(){
 var state = loadState();
 
 // ====== Init ======
+// 水培健康知识库（滚动轮换）
+var healthTips = [
+  '水培知识：无土种植，0农残0农药0化肥',
+  '健康真相：水培蔬菜重金属含量降低98%',
+  '省钱妙招：在家水培，一年省下菜钱约1440元',
+  '营养对比：水培番茄红素、β-胡萝卜素更高',
+  '节水环保：水培循环用水，比土培省90%',
+  '生长速度：水培比土培快40%-50%',
+  '空间利用：垂直水培产量是传统种植的13.8倍',
+  '全家安心：室内种植，隔绝雾霾、酸雨、虫害',
+  '现摘现吃：想吃就摘，营养不流失更鲜美',
+  '全球趋势：荷兰日本美国都在大力发展水培农业'
+];
+var tipIdx = 0;
+function toggleHealthTip(){
+  tipIdx = (tipIdx + 1) % healthTips.length;
+  var el = document.getElementById('tickerText');
+  if(el) el.textContent = healthTips[tipIdx];
+}
+// 自动轮换水培知识（8秒一条）
+setInterval(function(){
+  tipIdx = (tipIdx + 1) % healthTips.length;
+  var el = document.getElementById('tickerText');
+  if(el) el.textContent = healthTips[tipIdx];
+}, 8000);
+
 function initApp(){
   // 刷新顶部状态栏
   if(state.crops.length > 0){
@@ -1180,6 +1231,52 @@ function showZeroDetail(type){
     '</div>'+
     '<div style="font-size:14px;line-height:1.8;color:var(--ink)">'+d.content+'</div>'+
     '<button onclick="closeOverlay()" style="width:100%;margin-top:16px;padding:12px;background:'+d.color+';color:#fff;border:none;border-radius:8px;font-size:15px">知道了 ✓</button>'+
+  '</div>';
+  document.getElementById('sheetContent').innerHTML = html;
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ====== 成本明细详情 ======
+function openCostDetail(){
+  var html = '<div style="padding:20px;max-height:70vh;overflow-y:auto">'+
+    '<h2 style="text-align:center;color:var(--green);margin-bottom:16px">📊 种菜 vs 买菜 完整成本</h2>'+
+    '<div style="font-size:14px;line-height:1.9;color:var(--ink)">'+
+    '<h3 style="color:var(--green);margin:10px 0 6px">1️⃣ 一次性投入</h3>'+
+    '<p>D款44口设备：<b>¥998</b><br>包含：设备主机 + 水箱 + LED灯 + 定植棉</p>'+
+    '<h3 style="color:var(--green);margin:10px 0 6px">2️⃣ 每月消耗</h3>'+
+    '<p>种子+营养液：<b>约¥30/月</b><br>电费：约¥10/月（LED灯12小时/天）<br><b>合计约¥40/月</b></p>'+
+    '<h3 style="color:var(--green);margin:10px 0 6px">3️⃣ 对比买菜</h3>'+
+    '<p>一家3口每月买菜：<b>约¥150</b><br>水培自种每月产出：约¥120价值<br><b>每月净省 ¥120+</b></p>'+
+    '<h3 style="color:var(--green);margin:10px 0 6px">4️⃣ 回本周期</h3>'+
+    '<p>¥998 ÷ ¥120/月 ≈ <b>8.3个月</b><br>8个月后进入纯省钱阶段<br><b>一年省下约¥1440</b></p>'+
+    '<h3 style="color:var(--green);margin:10px 0 6px">5️⃣ 额外价值（不可量化）</h3>'+
+    '<p>✅ 0农残0激素，全家吃得放心<br>✅ 现摘现吃，营养不流失<br>✅ 孩子参与种植，食育教育<br>✅ 过程可记录，来源自己清楚</p>'+
+    '</div>'+
+    '<button onclick="closeOverlay()" style="width:100%;margin-top:16px;padding:12px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:15px">知道了 ✓</button>'+
+  '</div>';
+  document.getElementById('sheetContent').innerHTML = html;
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ====== 水培vs土培科学依据详情 ======
+function openCompareDetail(){
+  var html = '<div style="padding:20px;max-height:70vh;overflow-y:auto">'+
+    '<h2 style="text-align:center;color:var(--green);margin-bottom:16px">🔍 水培 vs 土培 科学数据</h2>'+
+    '<div style="font-size:14px;line-height:1.9;color:var(--ink)">'+
+    '<h3 style="color:var(--green);margin:10px 0 6px">🌱 生长速度</h3>'+
+    '<p>水培直接供营养到根系，省去找养分的精力<br><b>比土培快40%-50%</b>（研究证实）</p>'+
+    '<h3 style="color:var(--green);margin:10px 0 6px">💧 用水量</h3>'+
+    '<p>水培闭环循环，水几乎不浪费<br><b>比土培省90%用水</b>（土培276L/kg番茄，水培仅120L/kg）</p>'+
+    '<h3 style="color:var(--green);margin:10px 0 6px">📈 产量</h3>'+
+    '<p>可立体种植，植株间距更密<br><b>同面积产量最高13.8倍</b>（垂直水培研究）</p>'+
+    '<h3 style="color:var(--green);margin:10px 0 6px">🥗 营养价值</h3>'+
+    '<p>水培番茄<b>番茄红素、β-胡萝卜素更高</b>（Scientia Horticulturae 2021）<br>前提：营养液配方科学</p>'+
+    '<h3 style="color:var(--green);margin:10px 0 6px">🚫 农药残留</h3>'+
+    '<p>水培无土无虫，<b>0农药0化肥</b><br>土培常有农残、重金属风险</p>'+
+    '<h3 style="color:var(--green);margin:10px 0 6px">🌍 全球趋势</h3>'+
+    '<p>荷兰：全球第二大农产品出口国，NFT水培领先<br>日本：政府全额补贴植物工厂<br>美国：农业研究补贴最高200万美元<br><b>水培是农业的未来方向</b></p>'+
+    '</div>'+
+    '<button onclick="closeOverlay()" style="width:100%;margin-top:16px;padding:12px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:15px">知道了 ✓</button>'+
   '</div>';
   document.getElementById('sheetContent').innerHTML = html;
   document.getElementById('overlay').classList.add('show');
@@ -1348,7 +1445,8 @@ function userAction(action){
           '<div class="cost-summary">'+
           '设备回本周期：<strong>约8个月</strong><br>'+
           '<span style="font-size:12px">之后每月省¥120+，一年省¥1440<br>0农残0激素，吃得更放心</span>'+
-          '</div>'
+          '</div>'+
+          '<button class="detail-btn" onclick="openCostDetail()" style="width:100%;margin-top:10px;padding:10px;background:var(--mint);border:1px solid var(--green2);border-radius:10px;color:var(--green);font-size:13px;font-weight:600">📋 点开看完整成本明细</button>'
         );
       }, 1000);
       break;
@@ -1371,7 +1469,8 @@ function userAction(action){
           '<div style="margin-top:10px;padding:8px 12px;background:var(--mint);border-radius:8px;font-size:12px">'+
           '💡 <b>数智农业5个0</b>：0农残 · 0激素 · 0催熟 · 0重金属 · 0污染<br>'+
           '水培不是"不用土"这么简单，是从根上解决了食品安全问题。'+
-          '</div>'
+          '</div>'+
+          '<button class="detail-btn" onclick="openCompareDetail()" style="width:100%;margin-top:10px;padding:10px;background:var(--mint);border:1px solid var(--green2);border-radius:10px;color:var(--green);font-size:13px;font-weight:600">🔍 点开看科学依据和完整数据</button>'
         );
       }, 1000);
       break;
@@ -3453,7 +3552,8 @@ var orderStatusMap = {
   pending: {label:'待付款', color:'#FF8F00', icon:'¥'},
   paid:    {label:'待发货', color:'#2F7DB8', icon:'□'},
   shipped: {label:'待收货', color:'#7E57C2', icon:'→'},
-  done:    {label:'已完成', color:'#2E7D32', icon:'✓'}
+  done:    {label:'已完成', color:'#2E7D32', icon:'✓'},
+  cancelled: {label:'已取消', color:'#9E9E9E', icon:'×'}
 };
 
 function showOrderList(filter){
@@ -3495,6 +3595,7 @@ function showOrderList(filter){
           (o.status==='pending' ? '<button class="order-action-btn hot" onclick="payOrder('+realIdx+')">立即付款</button>' : '')+
           (o.status==='shipped' ? '<button class="order-action-btn hot" onclick="confirmReceive('+realIdx+')">确认收货</button>' : '')+
           (o.status==='done' ? '<button class="order-action-btn" onclick="showToast(\'再次购买\')">再次购买</button>' : '')+
+          (o.status==='pending' || o.status==='paid' ? '<button class="order-action-btn danger" onclick="cancelOrder('+realIdx+')">退订</button>' : '')+
           '<button class="order-action-btn" onclick="showOrderDetail('+realIdx+')">查看详情</button>'+
         '</div>'+
       '</div>';
@@ -3544,6 +3645,19 @@ function payOrder(idx){
   closeOverlay();
   showToast('付款成功！等待发货');
   setTimeout(function(){ showOrderList('paid'); }, 500);
+}
+
+function cancelOrder(idx){
+  var o = (state.orders || [])[idx];
+  if(!o) return;
+  if(!confirm('确定要退订这台设备吗？\n\n退订后订单将关闭。')){
+    return;
+  }
+  o.status = 'cancelled';
+  saveState();
+  closeOverlay();
+  showToast('已退订，订单已关闭');
+  setTimeout(function(){ showOrderList('all'); }, 500);
 }
 
 function confirmReceive(idx){
