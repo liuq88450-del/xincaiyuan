@@ -461,6 +461,63 @@ async function handleImgRecognition(imgBase64){
   }
 }
 
+// ====== 天气查询（open-meteo 免费API） ======
+// WMO天气代码 → 中文
+const WEATHER_CODE_MAP = {
+  0:'晴',1:'晴间多云',2:'多云',3:'阴',
+  45:'雾',48:'雾凇',
+  51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',
+  61:'小雨',63:'中雨',65:'大雨',
+  71:'小雪',73:'中雪',75:'大雪',
+  80:'阵雨',81:'阵雨',82:'强阵雨',
+  95:'雷阵雨',96:'雷阵雨伴冰雹',99:'雷阵雨伴冰雹'
+};
+// 主要中国城市列表（用于匹配用户提到的城市）
+const CITY_LIST = ['北京','上海','广州','深圳','杭州','南京','苏州','成都','重庆','武汉','西安','天津','郑州','长沙','合肥','福州','厦门','济南','青岛','大连','沈阳','哈尔滨','长春','昆明','贵阳','南宁','海口','三亚','乌鲁木齐','拉萨','兰州','西宁','银川','呼和浩特','太原','石家庄','南昌','无锡','宁波','温州','佛山','东莞','中山','泉州','常州','徐州','南通','烟台','潍坊','淄博','唐山','保定','洛阳','襄阳','宜昌','桂林','绵阳','遵义','大理','丽江','珠海','汕头','湛江','惠州','江门','肇庆','扬州','镇江','泰州','盐城','淮安','连云港','宿迁','嘉兴','湖州','绍兴','金华','台州','丽水','衢州','舟山','莆田','漳州','龙岩','三明','南平','宁德','芜湖','蚌埠','淮南','马鞍山','淮北','铜陵','安庆','黄山','滁州','阜阳','宿州','六安','亳州','池州','宣城','萍乡','九江','新余','鹰潭','赣州','吉安','宜春','抚州','上饶','株洲','湘潭','衡阳','邵阳','岳阳','常德','张家界','益阳','郴州','永州','怀化','娄底','湘西','开封','平顶山','安阳','鹤壁','新乡','焦作','濮阳','许昌','漯河','三门峡','南阳','商丘','信阳','周口','驻马店','十堰','荆州','宜昌','襄樊','鄂州','荆门','孝感','黄冈','咸宁','随州','恩施','秦皇岛','邯郸','邢台','张家口','承德','廊坊','沧州','衡水','大同','阳泉','长治','晋城','朔州','晋中','运城','忻州','临汾','吕梁','包头','乌海','赤峰','通辽','鄂尔多斯','呼伦贝尔','巴彦淖尔','乌兰察布','锦州','营口','阜新','辽阳','盘锦','铁岭','朝阳','葫芦岛','吉林','四平','辽源','通化','白山','松原','白城','齐齐哈尔','牡丹江','佳木斯','大庆','鸡西','双鸭山','伊春','七台河','鹤岗','黑河','绥化','南通'];
+// 从消息中提取城市名
+function extractCity(msg){
+  for(const c of CITY_LIST){
+    if(msg.indexOf(c) >= 0) return c;
+  }
+  return null;
+}
+// 查询城市天气
+async function fetchWeather(city){
+  try{
+    // 1. 城市转经纬度
+    const geoResp = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(city) + '&count=1&language=zh&format=json');
+    const geoData = await geoResp.json();
+    if(!geoData.results || geoData.results.length === 0) return null;
+    const loc = geoData.results[0];
+    // 2. 查实时天气
+    const wResp = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + loc.latitude + '&longitude=' + loc.longitude +
+      '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FShanghai');
+    const wData = await wResp.json();
+    if(!wData.current) return null;
+    const code = wData.current.weather_code;
+    return {
+      city: city,
+      temp: Math.round(wData.current.temperature_2m),
+      humidity: wData.current.relative_humidity_2m,
+      wind: Math.round(wData.current.wind_speed_10m),
+      desc: WEATHER_CODE_MAP[code] || '天气',
+      max: Math.round(wData.daily.temperature_2m_max[0]),
+      min: Math.round(wData.daily.temperature_2m_min[0])
+    };
+  }catch(e){
+    console.error('天气查询失败:', e.message);
+    return null;
+  }
+}
+// 判断是否天气问题
+const WEATHER_KEYWORDS = ['天气','下雨','下雪','气温','温度','冷不冷','热不热','要不要带伞','湿度','风力','刮风','降温','升温','预报'];
+function isWeatherQuestion(msg){
+  for(const k of WEATHER_KEYWORDS){
+    if(msg.indexOf(k) >= 0) return true;
+  }
+  return false;
+}
+
 // 处理LLM对话
 async function handleLLMChat(userMessage){
   if(!LLM_KEY){
@@ -468,6 +525,22 @@ async function handleLLMChat(userMessage){
   }
 
   try{
+    // 天气问题：先查真实天气再交给大模型组织回答
+    let context = '[当前时间:' + new Date().toLocaleString('zh-CN', {timeZone: 'Asia/Shanghai'}) + ']';
+    if(isWeatherQuestion(userMessage)){
+      const city = extractCity(userMessage);
+      if(city){
+        const weather = await fetchWeather(city);
+        if(weather){
+          context += '[天气实况:' + weather.city + ' 当前' + weather.temp + '℃ ' + weather.desc +
+            ' 湿度' + weather.humidity + '% 风力' + weather.wind + 'km/h 今日' + weather.min + '~' + weather.max + '℃]';
+        } else {
+          context += '[天气查询失败,告诉用户暂时查不到' + city + '的天气,可以问种植相关问题]';
+        }
+      } else {
+        context += '[用户问天气但没提城市,主动询问他在哪个城市]';
+      }
+    }
     const resp = await fetch('https://qianfan.baidubce.com/v2/chat/completions', {
       method: 'POST',
       headers: {
@@ -478,7 +551,7 @@ async function handleLLMChat(userMessage){
         model: 'ernie-5.1',
         messages: [
           {role: 'system', content: SYSTEM_PROMPT},
-          {role: 'user', content: '[当前时间:' + new Date().toLocaleString('zh-CN', {timeZone: 'Asia/Shanghai'}) + '] ' + userMessage}
+          {role: 'user', content: context + ' ' + userMessage}
         ],
         temperature: 0.7,
         max_output_tokens: 800
