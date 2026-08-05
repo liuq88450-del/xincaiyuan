@@ -143,16 +143,26 @@ button{cursor:pointer}
 .dev-tag.amber{background:#fff8e1;color:var(--amber)}
 .dev-img-wrap{
   width:100%;border-radius:10px;margin-bottom:10px;
-  overflow:hidden;position:relative;background:#f9fcf7;
+  overflow:hidden;position:relative;
   display:flex;align-items:center;justify-content:center;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255,255,255,.7) 0, transparent 30%),
+    radial-gradient(circle at 85% 75%, rgba(102,187,106,.18) 0, transparent 35%),
+    linear-gradient(135deg,#f0f9ee 0%,#e3f2e0 55%,#d7ebd3 100%);
 }
-.dev-img-wrap img{width:100%;height:260px;object-fit:contain;display:block;background:#f5f5f5}
+.dev-img-wrap::before{
+  content:'🌿';position:absolute;top:8px;right:10px;font-size:16px;opacity:.5;
+}
+.dev-img-wrap::after{
+  content:'🌱';position:absolute;bottom:8px;left:10px;font-size:14px;opacity:.45;
+}
+.dev-img-wrap img{width:100%;height:300px;object-fit:contain;display:block}
 .dev-img-badge{
   position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;
   font-size:11px;padding:2px 8px;border-radius:6px;
 }
 .dev-gallery{display:flex;gap:6px;margin:8px 0;overflow-x:auto;padding-bottom:4px}
-.dev-gallery-item{flex-shrink:0;width:90px;height:90px;border-radius:8px;overflow:hidden;cursor:pointer;background:#f9fcf7}
+.dev-gallery-item{flex-shrink:0;width:90px;height:90px;border-radius:8px;overflow:hidden;cursor:pointer;background:linear-gradient(135deg,#f0f9ee,#e0efe0)}
 .dev-gallery-item img{width:100%;height:100%;object-fit:contain}
 .dev-specs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
 .dev-spec{background:#f9fcf7;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:11px}
@@ -658,10 +668,10 @@ button{cursor:pointer}
       </div>
       <span class="arrow">›</span>
     </div>
-    <div class="health-ticker" id="healthTicker" onclick="toggleHealthTip()">
+    <div class="health-ticker" id="healthTicker" onclick="showHealthTipDetail()">
       <span class="ticker-ico">💡</span>
       <span class="ticker-text" id="tickerText">水培知识：无土种植，0农残0农药0化肥</span>
-      <span class="ticker-more">换一条</span>
+      <span class="ticker-more" onclick="event.stopPropagation();toggleHealthTip()">换一条</span>
     </div>
     <div class="chat" id="chat"></div>
     <div class="quick-row" id="quickRow">
@@ -1116,30 +1126,45 @@ function saveState(){
 var state = loadState();
 
 // ====== Init ======
-// 水培健康知识库（滚动轮换）
+// 水培健康知识库（滚动轮换，点击看详情）
 var healthTips = [
-  '水培知识：无土种植，0农残0农药0化肥',
-  '健康真相：水培蔬菜重金属含量降低98%',
-  '省钱妙招：在家水培，一年省下菜钱约1440元',
-  '营养对比：水培番茄红素、β-胡萝卜素更高',
-  '节水环保：水培循环用水，比土培省90%',
-  '生长速度：水培比土培快40%-50%',
-  '空间利用：垂直水培产量是传统种植的13.8倍',
-  '全家安心：室内种植，隔绝雾霾、酸雨、虫害',
-  '现摘现吃：想吃就摘，营养不流失更鲜美',
-  '全球趋势：荷兰日本美国都在大力发展水培农业'
+  {t:'无土种植，0农残0农药0化肥',d:'水培不用土壤，根系直接泡在营养液里，从源头切断土传病虫害，所以完全不需要打农药。经第三方检测，农药残留0检出，符合国家绿色食品标准。普通蔬菜农残检出率约60-80%，长期食用可能影响健康。'},
+  {t:'水培蔬菜重金属含量降低98%',d:'水培不使用土壤，避免土壤中重金属（铅、镉、汞等）被根系吸收；营养液成分完全可控，加上室内种植隔绝空气污染，检测数据重金属比土培降低98%。重金属会在人体累积，影响神经系统，对儿童尤其不利。'},
+  {t:'在家水培，一年省下菜钱约1440元',d:'一台D款44口设备¥998，种子营养液每月约¥40，一家3口每月买菜约¥150。设备约8个月回本，之后每月净省¥120+，一年省约¥1440，而且吃到的是0农残新鲜菜。'},
+  {t:'水培番茄红素、β-胡萝卜素更高',d:'2021年《Scientia Horticulturae》研究证实：水培番茄的番茄红素和β-胡萝卜素（重要抗氧化剂）含量高于土培。前提是营养液配方科学。现摘现吃还能避免运输储存造成的营养流失。'},
+  {t:'水培循环用水，比土培省90%',d:'水培是闭环循环系统，水直接流经根系，几乎不浪费；土培水会渗漏、蒸发、被土壤吸收。研究数据：土培番茄需276升水/kg，水培仅120升/kg。家里种菜不用天天浇水，水箱2周补一次即可。'},
+  {t:'水培比土培快40%-50%',d:'水培根系直接吸收溶解的营养，不用花精力在土里找养分，所以长得快。研究证实水培作物成熟快40%-50%，同一空间能收更多茬。家庭种菜从播种到采收，叶菜一般20-35天。'},
+  {t:'垂直水培产量是传统种植的13.8倍',d:'垂直立体种植能在同样占地面积种更多植物，一项对比研究发现垂直水培比传统种植产量高13.8倍。家庭水培设备立体分层，小空间也能种出多品种叶菜，实现循环采收。'},
+  {t:'室内种植，隔绝雾霾、酸雨、虫害',d:'户外蔬菜受空气污染、雾霾、酸雨、重金属沉降影响，还容易招虫害。室内水培在封闭环境种植，用净化水配营养液，无灰尘、病菌、虫卵，全家吃得干净放心。'},
+  {t:'现摘现吃，营养不流失更鲜美',d:'超市蔬菜采摘后要运输、储存好几天，营养逐渐流失。水培蔬菜在客厅里，想吃就摘，从采摘到下锅只要几分钟，维生素和风味物质保存最完整，口感也更鲜嫩。'},
+  {t:'荷兰日本美国都在大力发展水培农业',d:'荷兰是全球第二大农产品出口国，瓦格宁根大学研发NFT水培系统，政府补贴5000万欧元；日本2018年立法推动植物工厂，全额补贴；美国农业研究补贴最高200万美元。水培是农业的未来方向。'}
 ];
 var tipIdx = 0;
 function toggleHealthTip(){
   tipIdx = (tipIdx + 1) % healthTips.length;
   var el = document.getElementById('tickerText');
-  if(el) el.textContent = healthTips[tipIdx];
+  if(el) el.textContent = healthTips[tipIdx].t;
+}
+// 点击知识条查看详情
+function showHealthTipDetail(){
+  var tip = healthTips[tipIdx];
+  if(!tip) return;
+  var html = '<div style="padding:20px;max-height:70vh;overflow-y:auto">'+
+    '<div style="text-align:center;margin-bottom:14px">'+
+      '<span style="font-size:36px">💡</span>'+
+      '<h2 style="color:var(--green);margin:8px 0;font-size:18px">'+tip.t+'</h2>'+
+    '</div>'+
+    '<div style="font-size:14px;line-height:1.9;color:var(--ink);background:var(--mint);border-radius:10px;padding:14px">'+tip.d+'</div>'+
+    '<button onclick="closeOverlay()" style="width:100%;margin-top:16px;padding:12px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:15px">知道了 ✓</button>'+
+  '</div>';
+  document.getElementById('sheetContent').innerHTML = html;
+  document.getElementById('overlay').classList.add('show');
 }
 // 自动轮换水培知识（8秒一条）
 setInterval(function(){
   tipIdx = (tipIdx + 1) % healthTips.length;
   var el = document.getElementById('tickerText');
-  if(el) el.textContent = healthTips[tipIdx];
+  if(el) el.textContent = healthTips[tipIdx].t;
 }, 8000);
 
 function initApp(){
